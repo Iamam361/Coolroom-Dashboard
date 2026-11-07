@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://unpkg.com/mqtt.cool-web-client@2.0.0/dist/mqtt.cool.js"></script>
+<script src="https://unpkg.com/mqtt.cool-web-client@1.2.4/dist/mqtt.cool.js"></script>
 <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
 <style>
   :root{
@@ -148,8 +148,13 @@
         </div>
         <div id="wrapGw">
           <label>MQTT.Cool server</label>
-          <input id="gw" value="https://cloud.mqtt.cool">
+          <input id="gw" value="https://push.lightstreamer.com">
           <div class="hint">The gateway your browser talks to</div>
+        </div>
+        <div id="wrapUser">
+          <label>Gateway user</label>
+          <input id="guser" value="demouser">
+          <div class="hint">The public demo account; password stays empty</div>
         </div>
         <div>
           <label>Broker URL</label>
@@ -254,7 +259,7 @@ var SPANS = [
 var MAX_POINTS = 600;
 var MAX_ROWS   = 50000;
 var LS_DATA = 'coolroom_data_v1';
-var LS_CFG  = 'coolroom_cfg_v1';
+var LS_CFG  = 'coolroom_cfg_v2';
 
 /* ================= state ================= */
 var S = {
@@ -280,7 +285,8 @@ function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ ret
 
 function saveCfg(){
   lsSet(LS_CFG, JSON.stringify({
-    mode:$('mode').value, gw:$('gw').value, broker:$('broker').value, topic:$('topic').value,
+    mode:$('mode').value, gw:$('gw').value, guser:$('guser').value,
+    broker:$('broker').value, topic:$('topic').value,
     auto:$('auto').checked, persist:$('persist').checked,
     span:S.span, date:S.date, from:S.from, to:S.to
   }));
@@ -291,6 +297,7 @@ function loadCfg(){
     var c = JSON.parse(raw);
     if(c.mode)   $('mode').value   = c.mode;
     if(c.gw)     $('gw').value     = c.gw;
+    if(c.guser)  $('guser').value  = c.guser;
     if(c.broker) $('broker').value = c.broker;
     if(c.topic)  $('topic').value  = c.topic;
     if(typeof c.auto==='boolean')    $('auto').checked    = c.auto;
@@ -585,13 +592,13 @@ function scheduleRetry(){
   S.retryTimer=setTimeout(start,wait);
 }
 
-function connectCool(gw,broker,topic){
+function connectCool(gw,user,pass,broker,topic){
   if(typeof mqttcool==='undefined'){
     log('MQTT.Cool library failed to load — check your internet connection','e'); fail(); return;
   }
   setStatus('Opening session…','wait');
   log('Opening session to '+gw,'sys');
-  mqttcool.openSession(gw,{
+  mqttcool.openSession(gw,user,pass,{
     onConnectionSuccess:function(session){
       S.coolSession=session;
       log('Session established — connecting to broker '+broker,'sys');
@@ -620,7 +627,9 @@ function connectCool(gw,broker,topic){
         onFailure:function(e){ log('Could not connect to broker: '+((e&&e.errorMessage)||e),'e'); fail(); }
       });
     },
-    onConnectionFailure:function(code,msg){ log('Could not open session ['+code+'] '+msg,'e'); fail(); }
+    onConnectionFailure:function(type,code,msg){
+      log('Could not open session ['+type+'/'+code+'] '+(msg||''),'e'); fail();
+    }
   });
 }
 
@@ -655,7 +664,7 @@ function start(){
   if(!broker||!topic){ log('Enter both a broker URL and a topic','e'); return; }
   S.userStopped=false; S.conn=true;
   $('bGo').disabled=true; $('bStop').disabled=false;
-  if($('mode').value==='cool') connectCool($('gw').value.trim(),broker,topic);
+  if($('mode').value==='cool') connectCool($('gw').value.trim(),$('guser').value.trim(),'',broker,topic);
   else connectWs(broker,topic);
 }
 function fail(){
@@ -703,8 +712,10 @@ $('cfgTop').onclick=function(){ $('cfg').classList.toggle('open'); };
 function syncMode(){
   var m=$('mode').value; S.mode=m;
   $('wrapGw').style.display=(m==='cool')?'':'none';
+  $('wrapUser').style.display=(m==='cool')?'':'none';
   if(m==='cool'){
     $('modeHint').innerHTML='Same path as the test client: the browser connects to the gateway, and the gateway connects to the broker on port 1883.';
+    if(!/^https?:\/\//.test($('gw').value)) $('gw').value='https://push.lightstreamer.com';
     $('brokerHint').innerHTML='Gateway format: <code>tcp://host:port</code>';
     if($('broker').value.indexOf('tcp://')!==0) $('broker').value='tcp://broker.mqtt.cool:1883';
   }else{
@@ -720,6 +731,7 @@ $('mode').onchange=syncMode;
 $('broker').oninput=function(){summary();saveCfg();};
 $('topic').oninput=function(){summary();saveCfg();};
 $('gw').oninput=saveCfg;
+$('guser').oninput=saveCfg;
 $('auto').onchange=function(){
   saveCfg();
   if(this.checked && !S.conn) start();
