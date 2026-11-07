@@ -6,277 +6,332 @@
 <title>Cool Room Monitor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
 :root{
-  --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#2a3340; --line2:#374151;
-  --tx:#e6edf3; --tx2:#8b96a5; --tx3:#5f6b7a;
-  --in:#58a6ff; --out:#ff9f40; --ok:#3fb950; --warn:#d29922; --err:#f85149;
-  --temp:#ff7b72; --hum:#58a6ff; --vel:#a5d6ff; --accent:#1f6feb; --accent-tint:rgba(31,111,235,.14);
-  --hover:#232b38; --grid:#1f2733; --tick:#5f6b7a;
-  --sidebar:232px;
+  --bg:#f3f1ec; --panel:#ffffff; --panel2:#faf9f6; --rail:#ffffff;
+  --line:#ebe8e1; --line2:#ddd9d0;
+  --tx:#16161a; --tx2:#6f6c66; --tx3:#a3a09a;
+  --accent:#16161a; --accent-tx:#ffffff;
+  --in:#2f6df0; --out:#ef6b3b;
+  --t-temp:#fbe3dc; --t-hum:#e7e3fb; --t-vel:#d8f1e4;
+  --ok:#2f9e68; --warn:#d79a2b; --err:#dd4f43;
+  --grid:#eeece6; --tick:#a3a09a; --hover:#f2f0ea;
+  --r-card:22px; --r-ctl:14px; --r-sm:10px;
+  --rail-w:78px; --side-w:310px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,-apple-system,sans-serif;
-     font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--tx);
+  font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
 button,input,select{font-family:inherit}
-.app{display:flex;min-height:100vh}
+svg{display:block}
+.ic{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.sm{width:17px;height:17px}
 
-/* ---------- sidebar ---------- */
-.side{
-  width:var(--sidebar);flex:none;background:var(--panel);border-right:1px solid var(--line);
-  padding:18px 14px;display:flex;flex-direction:column;gap:5px;position:sticky;top:0;height:100vh;
-}
-.brand{display:flex;align-items:center;gap:9px;margin-bottom:16px;padding:0 6px}
-.brand .mark{width:28px;height:28px;border-radius:8px;background:var(--accent);
-  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex:none}
-.brand b{font-size:14px;font-weight:600;line-height:1.25}
-.brand small{display:block;font-size:11px;color:var(--tx3);font-weight:400}
-.sidelabel{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;
-  letter-spacing:.6px;padding:0 8px;margin:10px 0 5px}
-.nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;
-  color:var(--tx2);font-size:13.5px;font-weight:500;cursor:pointer;border:none;background:none;
-  width:100%;text-align:left;transition:.12s}
-.nav:hover{background:var(--panel2);color:var(--tx)}
-.nav.on{background:var(--accent);color:#fff}
-.nav .ic{width:18px;text-align:center;font-size:15px;flex:none;opacity:.9}
-.sidefoot{margin-top:auto;padding:11px 9px 0;border-top:1px solid var(--line);
-  font-size:11px;color:var(--tx3);line-height:1.8;font-variant-numeric:tabular-nums}
-.sidefoot .row{display:flex;align-items:center;gap:7px}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--tx3);flex:none}
-.dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(63,185,80,.16)}
-.dot.wait{background:var(--warn);animation:bl 1s infinite}
-.dot.bad{background:var(--err)}
-@keyframes bl{50%{opacity:.25}}
+/* ================= shell ================= */
+.shell{display:flex;min-height:100vh;gap:0}
+.rail{width:var(--rail-w);flex:none;background:var(--rail);border-radius:0 var(--r-card) var(--r-card) 0;
+  margin:14px 0;padding:18px 0;display:flex;flex-direction:column;align-items:center;gap:10px;
+  position:sticky;top:14px;height:calc(100vh - 28px);box-shadow:0 2px 14px rgba(22,22,26,.05)}
+.logo{width:40px;height:40px;border-radius:13px;background:var(--accent);color:var(--accent-tx);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;
+  letter-spacing:-.4px;margin-bottom:12px;flex:none}
+.rbtn{width:46px;height:46px;border-radius:50%;border:none;background:transparent;color:var(--tx2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;position:relative}
+.rbtn:hover{background:var(--hover);color:var(--tx)}
+.rbtn.on{background:var(--accent);color:var(--accent-tx)}
+.rbtn .tip{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%) scale(.95);
+  background:var(--tx);color:var(--panel);font-size:11.5px;font-weight:600;padding:5px 10px;
+  border-radius:8px;white-space:nowrap;opacity:0;pointer-events:none;transition:.14s;z-index:70}
+.rbtn:hover .tip{opacity:1;transform:translateY(-50%) scale(1)}
+.rail .push{margin-top:auto}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--t-hum);color:var(--tx);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;
+  cursor:pointer;border:none}
 
-/* ---------- main ---------- */
-main{flex:1;min-width:0;padding:22px 26px 60px}
-.head{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-.head h1{font-size:21px;font-weight:600;letter-spacing:-.3px}
-.head p{font-size:12.5px;color:var(--tx2);margin-top:2px}
-.head .right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.body{flex:1;min-width:0;display:flex;gap:18px;padding:20px 22px 40px}
+.col{flex:1;min-width:0}
+.side{width:var(--side-w);flex:none;display:flex;flex-direction:column;gap:14px}
+.side.hide{display:none}
+
+/* ================= headings ================= */
+.h1{font-size:40px;font-weight:800;letter-spacing:-1.6px;line-height:1.08;margin-bottom:6px}
+.h1 span{display:block}
+.sub{font-size:13.5px;color:var(--tx2);margin-bottom:20px}
+.h2{font-size:17px;font-weight:700;letter-spacing:-.4px}
+.sect{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;
+  letter-spacing:.8px;margin-bottom:13px}
 .view{display:none}
 .view.on{display:block}
 
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px}
-.pad{padding:15px 16px}
-.sect{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;
-  letter-spacing:.6px;margin-bottom:11px}
-.muted{color:var(--tx3);font-size:12px}
+/* ================= chips ================= */
+.chips{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px}
+.chip{display:inline-flex;align-items:center;gap:9px;padding:9px 18px 9px 9px;border-radius:999px;
+  border:none;background:var(--panel);color:var(--tx2);font-size:13.5px;font-weight:600;
+  cursor:pointer;transition:.15s;box-shadow:0 1px 5px rgba(22,22,26,.05)}
+.chip .cic{width:30px;height:30px;border-radius:50%;background:var(--hover);display:flex;
+  align-items:center;justify-content:center;flex:none;transition:.15s}
+.chip:hover{color:var(--tx)}
+.chip.on{background:var(--accent);color:var(--accent-tx)}
+.chip.on .cic{background:rgba(255,255,255,.18)}
+
+/* ================= cards ================= */
+.card{background:var(--panel);border-radius:var(--r-card);box-shadow:0 2px 14px rgba(22,22,26,.05)}
+.pad{padding:20px 22px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-bottom:18px}
+.tile{border-radius:var(--r-card);padding:18px 20px 16px;position:relative;overflow:hidden;
+  border:none;text-align:left;cursor:pointer;width:100%;display:block;color:var(--tx);transition:.18s}
+.tile:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(22,22,26,.09)}
+.tile.temp{background:var(--t-temp)} .tile.hum{background:var(--t-hum)} .tile.vel{background:var(--t-vel)}
+.tile-top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.tile-ic{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.62);
+  display:flex;align-items:center;justify-content:center;flex:none}
+.tile-top .nm{font-size:12.5px;font-weight:700;letter-spacing:-.1px}
+.delta{margin-left:auto;background:rgba(255,255,255,.72);border-radius:999px;padding:5px 11px;
+  font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.vals{display:flex;align-items:flex-end;gap:18px;margin-bottom:4px}
+.vcol .vk{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--tx2);margin-bottom:1px}
+.vcol .vv{font-size:31px;font-weight:800;letter-spacing:-1.4px;line-height:1;font-variant-numeric:tabular-nums}
+.vcol .vv u{font-size:12px;font-weight:600;text-decoration:none;color:var(--tx2);margin-left:2px}
+.tspark{height:48px;margin:10px -4px 8px}
+.tile-f{display:flex;align-items:center;font-size:11px;font-weight:600;color:var(--tx2)}
+.tile-f .go{margin-left:auto;display:flex;align-items:center;gap:4px}
+
+/* ================= right panel ================= */
+.pcard{background:var(--panel);border-radius:var(--r-card);padding:18px 20px;
+  box-shadow:0 2px 14px rgba(22,22,26,.05)}
+.phead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.phead .h2{flex:1}
+.statusbig{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 0 2px}
+.ring{width:74px;height:74px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  margin-bottom:12px;font-weight:800;font-size:12px;letter-spacing:.3px}
+.ring.live{background:rgba(47,158,104,.14);color:var(--ok)}
+.ring.stale{background:rgba(215,154,43,.16);color:var(--warn)}
+.ring.down{background:rgba(221,79,67,.13);color:var(--err)}
+.statusbig b{font-size:15px;font-weight:700;margin-bottom:3px}
+.statusbig p{font-size:12px;color:var(--tx2);line-height:1.55}
+.srow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);
+  font-size:12.5px}
+.srow:last-child{border-bottom:none}
+.srow .k{color:var(--tx2)}
+.srow .v{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.minibox{background:var(--panel2);border-radius:var(--r-sm);padding:10px 11px}
+.minibox .k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3)}
+.minibox .v{font-size:17px;font-weight:800;letter-spacing:-.6px;font-variant-numeric:tabular-nums;margin-top:2px}
+
+/* ================= controls ================= */
+label{display:block;font-size:10.5px;font-weight:700;color:var(--tx2);text-transform:uppercase;
+  letter-spacing:.6px;margin-bottom:7px}
+input,select{width:100%;padding:10px 12px;background:var(--panel2);color:var(--tx);
+  border:1px solid var(--line);border-radius:var(--r-ctl);font-size:13.5px;font-weight:500}
+input:focus,select:focus{outline:none;border-color:var(--tx3);background:var(--panel)}
+.btn{padding:10px 18px;border-radius:999px;border:1px solid var(--line2);background:var(--panel);
+  color:var(--tx);font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+.btn:hover:not(:disabled){background:var(--hover)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-tx)}
+.btn.pri:hover:not(:disabled){filter:brightness(1.22)}
+.btn.sm{padding:7px 14px;font-size:12px}
+.btn.wic{display:inline-flex;align-items:center;gap:7px}
+code{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px;background:var(--panel2);
+  padding:2px 7px;border-radius:7px;border:1px solid var(--line)}
+.note{font-size:12px;color:var(--tx3);margin-top:12px;line-height:1.65}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;
+  background:var(--panel);font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;
+  box-shadow:0 1px 5px rgba(22,22,26,.05)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--tx3);flex:none;display:inline-block}
+.dot.on{background:var(--ok)} .dot.wait{background:var(--warn);animation:bl 1s infinite}
+.dot.bad{background:var(--err)}
+@keyframes bl{50%{opacity:.3}}
 .spacer{flex:1}
-label{display:block;font-size:10.5px;font-weight:600;color:var(--tx2);text-transform:uppercase;
-  letter-spacing:.5px;margin-bottom:6px}
-input,select{width:100%;padding:8px 10px;background:var(--bg);color:var(--tx);
-  border:1px solid var(--line);border-radius:8px;font-size:13px}
-input:focus,select:focus{outline:none;border-color:var(--in)}
-.btn{padding:8px 15px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);
-  color:var(--tx);font-size:13px;font-weight:600;cursor:pointer;transition:.12s}
-.btn:hover:not(:disabled){border-color:var(--tx3);background:var(--hover)}
-.btn:disabled{opacity:.42;cursor:not-allowed}
-.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.pri:hover:not(:disabled){filter:brightness(1.12)}
-.btn.sm{padding:5px 11px;font-size:11.5px}
-code{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px;
-  background:var(--panel2);padding:1px 6px;border-radius:5px}
+.toprow{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:4px}
+.toprow .right{margin-left:auto;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
 
-/* ---------- overview ---------- */
-.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:13px;margin-bottom:16px}
-.room{padding:15px 16px;position:relative}
-.room-h{display:flex;align-items:center;gap:9px;margin-bottom:12px}
-.room-h b{font-size:15px;font-weight:600}
-.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.3px}
-.badge.live{background:rgba(63,185,80,.14);color:var(--ok)}
-.badge.stale{background:rgba(210,153,34,.15);color:var(--warn)}
-.badge.down{background:rgba(248,81,73,.14);color:var(--err)}
-.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-.trio .cell{background:var(--bg);border-radius:9px;padding:9px 11px}
-.trio .k{font-size:10.5px;color:var(--tx2);margin-bottom:3px}
-.trio .v{font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
-.trio .v u{font-size:11px;font-weight:500;color:var(--tx3);text-decoration:none;margin-left:2px}
-.trio .d{font-size:10.5px;color:var(--tx3);margin-top:3px;font-variant-numeric:tabular-nums}
-.spark{height:46px;margin-bottom:9px}
-.room-f{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--tx3);
-  font-variant-numeric:tabular-nums}
-.room-f .btn{margin-left:auto}
-.rooms{align-items:start}
-
-/* ---------- detail ---------- */
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:13px}
-.toolbar > div{min-width:150px}
-.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
-.seg button{border:none;border-radius:0;background:transparent;padding:8px 15px;font-size:12.5px;
-  font-weight:600;color:var(--tx2);border-right:1px solid var(--line);cursor:pointer}
-.seg button:last-child{border-right:none}
-.seg button:hover:not(.on){background:var(--hover);color:var(--tx)}
-.seg button.on{background:var(--accent);color:#fff}
-.charts{display:grid;grid-template-columns:1fr;gap:13px;margin-bottom:14px}
-.ch{padding:14px 16px}
-.ch-h{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.ch-h b{font-size:14px;font-weight:600}
-.ch-h .u{font-size:11px;color:var(--tx3)}
+/* ================= detail ================= */
+.toolbar{display:flex;gap:13px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;
+  background:var(--panel);border-radius:var(--r-card);padding:16px 18px;
+  box-shadow:0 2px 14px rgba(22,22,26,.05)}
+.toolbar > div{min-width:146px}
+.seg{display:flex;background:var(--panel2);border-radius:999px;padding:4px;gap:3px}
+.seg button{border:none;background:transparent;padding:7px 15px;font-size:12.5px;font-weight:700;
+  color:var(--tx2);border-radius:999px;cursor:pointer;transition:.14s}
+.seg button:hover:not(.on){color:var(--tx)}
+.seg button.on{background:var(--accent);color:var(--accent-tx)}
+.charts{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px}
+.ch{padding:18px 20px}
+.ch-h{display:flex;align-items:center;gap:11px;margin-bottom:12px;flex-wrap:wrap}
+.ch-h .cic{width:32px;height:32px;border-radius:11px;display:flex;align-items:center;
+  justify-content:center;flex:none}
+.ch-h.temp .cic{background:var(--t-temp)} .ch-h.hum .cic{background:var(--t-hum)}
+.ch-h.vel .cic{background:var(--t-vel)}
+.ch-h b{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.ch-h .u{font-size:11.5px;color:var(--tx3);font-weight:600}
 .zspan{font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums}
-.lg{display:flex;gap:12px;margin-left:auto;font-size:11px;color:var(--tx2);align-items:center}
-.lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.lg{display:flex;gap:13px;margin-left:auto;font-size:11.5px;color:var(--tx2);align-items:center;font-weight:600}
+.lg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:middle}
 .lg i.dash{width:14px;height:0;border-top:2px dashed currentColor;border-radius:0}
 .cv{position:relative}
-.zhint{font-size:10.5px;color:var(--tx3);margin-top:8px;text-align:right}
-.stats{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
-.stats th{text-align:right;font-size:10.5px;font-weight:600;color:var(--tx3);text-transform:uppercase;
-  letter-spacing:.5px;padding:0 0 8px;border-bottom:1px solid var(--line)}
+.zhint{font-size:10.5px;color:var(--tx3);margin-top:10px;text-align:right;font-weight:500}
+.stats{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.stats th{text-align:right;font-size:10.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;
+  letter-spacing:.6px;padding:0 0 10px;border-bottom:1px solid var(--line)}
 .stats th:first-child{text-align:left}
-.stats td{padding:8px 0;border-bottom:1px solid var(--line);text-align:right}
-.stats td:first-child{text-align:left;color:var(--tx2)}
+.stats td{padding:10px 0;border-bottom:1px solid var(--line);text-align:right;font-weight:600}
+.stats td:first-child{text-align:left;color:var(--tx2);font-weight:500}
 .stats tr:last-child td{border-bottom:none}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;
-  background:var(--panel2);border:1px solid var(--line);font-size:12px;font-variant-numeric:tabular-nums}
 
-/* ---------- export + settings ---------- */
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:13px}
-.quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
-.note{font-size:12px;color:var(--tx3);margin-top:12px;line-height:1.65}
-.chk{display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;user-select:none;margin-top:12px}
-.chk input{width:auto;margin:0;accent-color:var(--accent)}
-.log{max-height:170px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:8px;
-  padding:10px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px;line-height:1.75}
+/* ================= export + settings ================= */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(224px,1fr));gap:14px}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.log{max-height:180px;overflow:auto;background:var(--panel2);border:1px solid var(--line);
+  border-radius:var(--r-ctl);padding:12px;font-family:ui-monospace,'SF Mono',Menlo,monospace;
+  font-size:11.5px;line-height:1.8}
 .log .t{color:var(--tx3);margin-right:8px}
 .log .e{color:var(--err)} .log .g{color:var(--ok)} .log .s{color:var(--warn)}
+.chk{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;user-select:none;
+  margin-top:14px;font-weight:500;color:var(--tx2)}
+.chk input{width:auto;margin:0;accent-color:var(--accent)}
 
-/* ---------- date picker ---------- */
-.dtwrap{position:relative}
-.dtpop{position:absolute;z-index:60;top:calc(100% + 6px);left:0;background:var(--panel2);
-  border:1px solid var(--line);border-radius:11px;box-shadow:0 16px 44px rgba(0,0,0,.6);
-  padding:11px;display:none}
-.dtpop.open{display:flex;gap:11px}
-.dtcal{width:220px}
-.dtnav{display:flex;align-items:center;gap:6px;margin-bottom:8px}
-.dtnav b{flex:1;text-align:center;font-size:12.5px}
-.dtnav button{padding:3px 10px;font-size:13px;border-radius:6px;border:1px solid var(--line);
-  background:var(--panel);color:var(--tx);cursor:pointer}
-.dtgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.dtgrid span{font-size:10px;color:var(--tx3);text-align:center;padding:3px 0;font-weight:600}
-.dtgrid button{padding:6px 0;font-size:11.5px;border:none;border-radius:6px;background:transparent;
-  color:var(--tx);cursor:pointer}
-.dtgrid button:hover:not(:disabled){background:var(--hover)}
-.dtgrid button.out{color:var(--tx3)}
-.dtgrid button.sel{background:var(--accent);color:#fff}
-.dtgrid button.today{outline:1px solid var(--out)}
-.dtcols{display:flex;gap:7px}
-.dtcol{width:54px;display:flex;flex-direction:column}
-.dtcol .hd{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;
-  text-align:center;margin-bottom:5px;font-weight:600}
-.dtlist{height:198px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
-.dtlist button{display:block;width:100%;padding:5px 0;font-size:12px;border:none;border-radius:0;
-  background:transparent;color:var(--tx);cursor:pointer;font-variant-numeric:tabular-nums}
-.dtlist button:hover{background:var(--hover)}
-.dtlist button.sel{background:var(--accent);color:#fff}
-.dtfoot{display:flex;gap:7px;margin-top:9px}
-
-.demobar{background:rgba(210,153,34,.12);border:1px solid rgba(210,153,34,.45);color:var(--tx);
-  border-radius:10px;padding:9px 14px;font-size:12.5px;margin-bottom:16px}
-/* ---------- login ---------- */
-.login{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;
-  background:radial-gradient(1200px 600px at 50% -10%,var(--accent-tint),transparent 70%),var(--bg)}
-body.locked .login{display:flex}
-body.locked .app, body.locked .mnav{display:none!important}
-.lcard{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:16px;
-  padding:28px 26px 24px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
-.lcard .brand{margin-bottom:22px;padding:0}
-.lcard h2{font-size:20px;font-weight:600;letter-spacing:-.3px;margin-bottom:4px}
-.lcard .lsub{font-size:13px;color:var(--tx2);margin-bottom:20px}
-.lcard label{margin-top:14px}
-.pwrap{position:relative}
-.pwrap input{padding-right:62px}
-.pwrap button{position:absolute;right:5px;top:50%;transform:translateY(-50%);border:none;background:none;
-  color:var(--tx2);font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;border-radius:6px}
-.pwrap button:hover{background:var(--hover);color:var(--tx)}
-.lerr{min-height:18px;font-size:12.5px;color:var(--err);margin:12px 0 4px}
-.lcard .btn.pri{width:100%;padding:10px;font-size:14px}
-.lfoot{font-size:11.5px;color:var(--tx3);text-align:center;margin-top:16px}
-@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
-.shake{animation:shake .35s}
-
-/* ---------- account chip in sidebar ---------- */
-.who{display:flex;align-items:center;gap:8px;margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
-.who .av{width:24px;height:24px;border-radius:50%;background:var(--accent-tint);color:var(--accent);
-  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none}
-.who b{font-size:12px;color:var(--tx);font-weight:600}
-.who button{margin-left:auto;border:none;background:none;color:var(--tx3);font-size:11px;cursor:pointer;
-  padding:3px 6px;border-radius:5px}
-.who button:hover{color:var(--err);background:var(--hover)}
-
-/* ---------- settings topics ---------- */
-.setwrap{display:grid;grid-template-columns:190px minmax(0,1fr);gap:16px;align-items:start}
-.setnav{display:flex;flex-direction:column;gap:3px;position:sticky;top:16px}
-.setnav button{border:none;background:none;text-align:left;padding:9px 12px;border-radius:8px;color:var(--tx2);
-  font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:9px}
+/* ================= settings topics ================= */
+.setwrap{display:grid;grid-template-columns:196px minmax(0,1fr);gap:18px;align-items:start}
+.setnav{display:flex;flex-direction:column;gap:4px;position:sticky;top:18px}
+.setnav button{border:none;background:none;text-align:left;padding:11px 15px;border-radius:999px;
+  color:var(--tx2);font-size:13.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:11px}
 .setnav button:hover{background:var(--hover);color:var(--tx)}
-.setnav button.on{background:var(--accent-tint);color:var(--accent);font-weight:600}
-.setnav .ic{width:16px;text-align:center;opacity:.85}
-.setpane{display:none}
-.setpane.on{display:block}
-.setpane .card{margin-bottom:14px}
-.sethead{margin-bottom:12px}
-.sethead h2{font-size:16px;font-weight:600}
-.sethead p{font-size:12.5px;color:var(--tx2);margin-top:2px}
+.setnav button.on{background:var(--accent);color:var(--accent-tx)}
+.setpane{display:none} .setpane.on{display:block}
+.setpane .card{margin-bottom:16px}
+.sethead{margin-bottom:14px}
+.sethead h2{font-size:19px;font-weight:800;letter-spacing:-.6px}
+.sethead p{font-size:13px;color:var(--tx2);margin-top:3px}
 
-/* ---------- appearance ---------- */
-.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-.theme{border:1px solid var(--line);border-radius:11px;padding:10px;cursor:pointer;background:var(--panel2);
-  text-align:left;color:var(--tx);transition:.12s}
-.theme:hover{border-color:var(--tx3)}
-.theme.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-tint)}
-.theme .sw{height:46px;border-radius:7px;margin-bottom:8px;display:flex;overflow:hidden;border:1px solid rgba(127,127,127,.25)}
+/* ================= appearance ================= */
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:12px}
+.theme{border:2px solid transparent;border-radius:var(--r-ctl);padding:11px;cursor:pointer;
+  background:var(--panel2);text-align:left;color:var(--tx);transition:.14s}
+.theme:hover{border-color:var(--line2)}
+.theme.on{border-color:var(--accent)}
+.theme .sw{height:44px;border-radius:var(--r-sm);margin-bottom:9px;display:flex;overflow:hidden}
 .theme .sw span{flex:1}
-.theme b{font-size:12.5px;font-weight:600}
-.theme small{display:block;font-size:11px;color:var(--tx3)}
-.crow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.theme b{font-size:12.5px;font-weight:700}
+.theme small{display:block;font-size:11px;color:var(--tx3);font-weight:500}
+.cgroup{margin-bottom:20px}
+.cgroup:last-child{margin-bottom:0}
+.cgroup .gt{font-size:12px;font-weight:700;margin-bottom:3px}
+.cgroup .gd{font-size:11.5px;color:var(--tx3);margin-bottom:10px}
+.crow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
 .crow:last-child{border-bottom:none}
 .crow .nm{flex:1;min-width:0}
-.crow .nm b{font-size:13px;font-weight:600;display:block}
-.crow .nm small{font-size:11.5px;color:var(--tx3)}
-.cpick{width:42px!important;height:34px;padding:2px!important;cursor:pointer;flex:none}
-.chex{width:96px!important;flex:none;font-family:ui-monospace,'SF Mono',Menlo,monospace;text-transform:lowercase}
-.preview{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
-.preview svg{display:block;width:100%;height:90px}
+.crow .nm b{font-size:12.5px;font-weight:600;display:block}
+.crow .nm small{font-size:11px;color:var(--tx3)}
+.cpick{width:44px!important;height:34px;padding:2px!important;cursor:pointer;flex:none;
+  border-radius:var(--r-sm)!important}
+.chex{width:100px!important;flex:none;font-family:ui-monospace,'SF Mono',Menlo,monospace;
+  text-transform:lowercase;padding:7px 9px!important;font-size:12px!important}
+.preview{background:var(--bg);border-radius:var(--r-ctl);padding:14px}
 
-/* ---------- mobile ---------- */
+/* ================= login ================= */
+.login{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+body.locked .login{display:flex}
+body.locked .shell,body.locked .mnav{display:none!important}
+.lcard{width:100%;max-width:400px;background:var(--panel);border-radius:26px;padding:34px 32px 28px;
+  box-shadow:0 18px 48px rgba(22,22,26,.10)}
+.lcard .logo{width:46px;height:46px;border-radius:15px;font-size:14px;margin-bottom:20px}
+.lcard h2{font-size:26px;font-weight:800;letter-spacing:-1px;margin-bottom:5px}
+.lsub{font-size:13.5px;color:var(--tx2);margin-bottom:22px}
+.lcard label{margin-top:16px}
+.pwrap{position:relative}
+.pwrap input{padding-right:66px}
+.pwrap button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:none;background:none;
+  color:var(--tx2);font-size:12px;font-weight:700;padding:6px 9px;cursor:pointer;border-radius:8px}
+.pwrap button:hover{background:var(--hover);color:var(--tx)}
+.lerr{min-height:19px;font-size:12.5px;color:var(--err);margin:13px 0 4px;font-weight:600}
+.lcard .btn.pri{width:100%;padding:13px;font-size:14.5px}
+.lfoot{font-size:11.5px;color:var(--tx3);text-align:center;margin-top:18px}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.shake{animation:shake .35s}
+.demobar{background:var(--t-temp);color:var(--tx);border-radius:var(--r-ctl);
+  padding:11px 16px;font-size:12.5px;font-weight:600;margin-bottom:18px}
+
+/* ================= date picker ================= */
+.dtwrap{position:relative}
+.dtpop{position:absolute;z-index:80;top:calc(100% + 8px);left:0;background:var(--panel);
+  border-radius:18px;box-shadow:0 20px 50px rgba(22,22,26,.16);padding:14px;display:none}
+.dtpop.open{display:flex;gap:13px}
+.dtcal{width:228px}
+.dtnav{display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.dtnav b{flex:1;text-align:center;font-size:13px;font-weight:700}
+.dtnav button{width:28px;height:28px;border-radius:50%;border:none;background:var(--panel2);
+  color:var(--tx);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.dtnav button:hover{background:var(--hover)}
+.dtgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dtgrid span{font-size:10px;color:var(--tx3);text-align:center;padding:4px 0;font-weight:700}
+.dtgrid button{padding:7px 0;font-size:12px;border:none;border-radius:50%;background:transparent;
+  color:var(--tx);cursor:pointer;font-weight:600}
+.dtgrid button:hover:not(:disabled){background:var(--hover)}
+.dtgrid button.out{color:var(--tx3)}
+.dtgrid button.sel{background:var(--accent);color:var(--accent-tx)}
+.dtgrid button.today{box-shadow:inset 0 0 0 1.5px var(--out)}
+.dtcols{display:flex;gap:8px}
+.dtcol{width:56px;display:flex;flex-direction:column}
+.dtcol .hd{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;
+  text-align:center;margin-bottom:6px;font-weight:700}
+.dtlist{height:200px;overflow-y:auto;border-radius:var(--r-ctl);background:var(--panel2)}
+.dtlist button{display:block;width:100%;padding:6px 0;font-size:12px;border:none;background:transparent;
+  color:var(--tx);cursor:pointer;font-variant-numeric:tabular-nums;font-weight:600}
+.dtlist button:hover{background:var(--hover)}
+.dtlist button.sel{background:var(--accent);color:var(--accent-tx)}
+.dtfoot{display:flex;gap:7px;margin-top:10px}
+
+/* ================= mobile ================= */
 .mnav{display:none}
-@media(max-width:860px){
-  .side{display:none}
-  main{padding:16px 14px 86px}
-  .head h1{font-size:18px}
-  .mnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--panel);
-    border-top:1px solid var(--line);padding:7px 6px calc(7px + env(safe-area-inset-bottom))}
-  .mnav button{flex:1;border:none;background:none;color:var(--tx2);font-size:10.5px;font-weight:600;
-    padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
-    border-radius:8px}
-  .mnav button.on{color:var(--accent);background:var(--accent-tint)}
-  .mnav .ic{font-size:17px}
-  .rooms{grid-template-columns:1fr}
+@media(max-width:1180px){ .side{display:none} }
+@media(max-width:820px){
+  .rail{display:none}
+  .body{padding:14px 14px 92px}
+  .h1{font-size:29px;letter-spacing:-1.1px}
+  .mnav{display:flex;position:fixed;left:10px;right:10px;bottom:10px;z-index:60;background:var(--panel);
+    border-radius:22px;padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+    box-shadow:0 6px 26px rgba(22,22,26,.14)}
+  .mnav button{flex:1;border:none;background:none;color:var(--tx2);font-size:10px;font-weight:700;
+    padding:7px 2px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;
+    border-radius:16px}
+  .mnav button.on{color:var(--accent-tx);background:var(--accent)}
   .setwrap{grid-template-columns:1fr}
   .setnav{flex-direction:row;overflow-x:auto;position:static;padding-bottom:4px}
-  .setnav button{white-space:nowrap;padding:8px 11px}
-  .trio{gap:7px}
-  .trio .cell{padding:8px 9px}
-  .trio .v{font-size:18px}
-  .trio .d{font-size:9.5px;white-space:nowrap}
+  .setnav button{white-space:nowrap;padding:9px 14px}
   .dtpop.open{flex-direction:column;left:auto;right:0}
   .dtcal{width:100%}
+  .tiles{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body class="locked">
 
+<svg style="display:none">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.2 12 3l9 7.2V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 15l4-5 3.5 3L21 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v13"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.46V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.46-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.46-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 1-1.46V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.46 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9a1.6 1.6 0 0 0 1.46 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.46 1z"/></symbol>
+  <symbol id="i-temp" viewBox="0 0 24 24"><path d="M14 14.76V4a2 2 0 1 0-4 0v10.76a4.5 4.5 0 1 0 4 0z"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 2.7 6.9 8.3a7.2 7.2 0 1 0 10.2 0z"/></symbol>
+  <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h10a3 3 0 1 0-3-3"/><path d="M3 16h13a3 3 0 1 1-3 3"/><path d="M3 12h7"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+</svg>
+
 <div class="login" id="login">
-  <form class="lcard" id="loginForm" autocomplete="on" novalidate>
-    <div class="brand">
-      <div class="mark">CR</div>
-      <div><b>Cool Room</b><small>Sensor monitor</small></div>
-    </div>
+  <form class="lcard" id="loginForm" novalidate>
+    <div class="logo">CR</div>
     <h2>Sign in</h2>
     <p class="lsub">Enter your lab account to view the dashboard.</p>
     <label for="lu">Username</label>
@@ -286,7 +341,7 @@ body.locked .app, body.locked .mnav{display:none!important}
       <input id="lp" name="password" type="password" autocomplete="current-password">
       <button type="button" id="lshow" aria-label="Show password">Show</button>
     </div>
-    <label class="chk" style="text-transform:none;letter-spacing:0;font-weight:500;font-size:13px;color:var(--tx2)">
+    <label class="chk" style="text-transform:none;letter-spacing:0">
       <input type="checkbox" id="lrem" checked> Keep me signed in on this device
     </label>
     <div class="lerr" id="lerr" role="alert"></div>
@@ -295,317 +350,329 @@ body.locked .app, body.locked .mnav{display:none!important}
   </form>
 </div>
 
-<div class="app">
-
-  <aside class="side">
-    <div class="brand">
-      <div class="mark">CR</div>
-      <div><b>Cool Room</b><small>Sensor monitor</small></div>
-    </div>
-
-    <div class="sidelabel">Location</div>
-    <select id="roomSel"><option value="coolroom">Cool room 1</option></select>
-
-    <div class="sidelabel">Pages</div>
-    <button class="nav on" data-go="overview"><span class="ic">◉</span>Overview</button>
-    <button class="nav" data-go="detail"><span class="ic">◭</span>Detail</button>
-    <button class="nav" data-go="export"><span class="ic">↓</span>Export</button>
-    <button class="nav" data-go="settings"><span class="ic">⚙</span>Settings</button>
-
-    <div class="sidefoot">
-      <div class="row"><span class="dot" id="dot"></span><span id="connTx">Starting…</span></div>
-      <div id="lastTx">—</div>
-      <div id="daysTx">—</div>
-      <div class="who"><div class="av" id="whoAv">IL</div><b id="whoName">—</b>
-        <button id="sideLogout" title="Sign out">Sign out</button></div>
-    </div>
+<div class="shell">
+  <aside class="rail">
+    <div class="logo">CR</div>
+    <button class="rbtn on" data-go="overview" aria-label="Overview">
+      <svg class="ic"><use href="#i-home"/></svg><span class="tip">Overview</span></button>
+    <button class="rbtn" data-go="detail" aria-label="Detail">
+      <svg class="ic"><use href="#i-chart"/></svg><span class="tip">Detail</span></button>
+    <button class="rbtn" data-go="export" aria-label="Export">
+      <svg class="ic"><use href="#i-down"/></svg><span class="tip">Export</span></button>
+    <button class="rbtn" data-go="settings" aria-label="Settings">
+      <svg class="ic"><use href="#i-gear"/></svg><span class="tip">Settings</span></button>
+    <div class="push"></div>
+    <button class="rbtn" id="railOut" aria-label="Sign out">
+      <svg class="ic"><use href="#i-out"/></svg><span class="tip">Sign out</span></button>
+    <button class="avatar" id="railAv" aria-label="Account">IL</button>
   </aside>
 
-  <main>
-    <div class="demobar" id="demoBar" style="display:none">Demo data — this file was opened from your computer. Open it from the server for live readings.</div>
-
-    <!-- ================= OVERVIEW ================= -->
-    <section class="view on" id="v-overview">
-      <div class="head">
-        <div>
-          <h1>Overview</h1>
-          <p>Every room at a glance. Nothing to configure here.</p>
-        </div>
-        <div class="right">
-          <span class="pill"><span class="dot" id="dot2"></span><span id="conn2">—</span></span>
-          <button class="btn sm" id="ovRefresh">Refresh</button>
-        </div>
+  <div class="body">
+    <div class="col">
+      <div class="demobar" id="demoBar" style="display:none">
+        Demo data — this file was opened from your computer. Open it from the server for live readings.
       </div>
 
-      <div class="rooms" id="roomGrid"></div>
-      <div class="note" style="margin:-4px 0 16px">More rooms appear here once the server is set up for them.</div>
-
-      <div class="card pad">
-        <div class="sect">Last 6 hours</div>
-        <div class="cv" style="height:210px"><canvas id="ovChart"></canvas></div>
-      </div>
-    </section>
-
-    <!-- ================= DETAIL ================= -->
-    <section class="view" id="v-detail">
-      <div class="head">
-        <div>
-          <h1>Detail</h1>
-          <p>Pick a measurement and a period. Scroll to zoom, drag to pan.</p>
-        </div>
-        <div class="right">
-          <span class="pill" id="pointsPill">—</span>
-          <button class="btn sm" id="dtReset">Reset zoom</button>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <div style="min-width:0">
-          <label>Measurement</label>
-          <div class="seg" id="measSeg">
-            <button class="on" data-m="all">All</button>
-            <button data-m="T">Temperature</button>
-            <button data-m="H">Humidity</button>
-            <button data-m="V">Velocity</button>
+      <!-- ============ OVERVIEW ============ -->
+      <section class="view on" id="v-overview">
+        <div class="toprow">
+          <div>
+            <div class="h1"><span>Cool room</span><span>at a glance</span></div>
+            <p class="sub" id="ovSub">—</p>
+          </div>
+          <div class="right">
+            <span class="pill"><span class="dot" id="dot2"></span><span id="conn2">—</span></span>
+            <button class="btn sm wic" id="ovRefresh"><svg class="ic sm"><use href="#i-refresh"/></svg>Refresh</button>
           </div>
         </div>
-        <div>
-          <label>Date</label>
-          <select id="selDate"></select>
+
+        <div class="chips" id="roomChips">
+          <button class="chip on" data-room="coolroom">
+            <span class="cic"><svg class="ic sm"><use href="#i-home"/></svg></span>Cool room 1</button>
         </div>
-        <div id="wrapSpan">
-          <label>Time range</label>
-          <select id="selSpan"></select>
+
+        <div class="tiles" id="tileGrid"></div>
+
+        <div class="card pad">
+          <div class="sect">Today so far</div>
+          <table class="stats" id="todayTable"></table>
         </div>
-        <div id="wrapFrom" style="display:none">
-          <label>From</label><select id="selFrom"></select>
-        </div>
-        <div id="wrapTo" style="display:none">
-          <label>To</label><select id="selTo"></select>
-        </div>
-        <div style="min-width:0">
-          <label>Overlay</label>
-          <div class="seg" id="cmpSeg">
-            <button class="on" data-c="none">Off</button>
-            <button data-c="1">vs yesterday</button>
-            <button data-c="7">vs last week</button>
+      </section>
+
+      <!-- ============ DETAIL ============ -->
+      <section class="view" id="v-detail">
+        <div class="toprow">
+          <div>
+            <div class="h1"><span>Detail</span></div>
+            <p class="sub">Scroll to zoom, drag to pan, shift+drag to box-zoom.</p>
+          </div>
+          <div class="right">
+            <span class="pill" id="pointsPill">—</span>
+            <button class="btn sm" id="dtReset">Reset zoom</button>
           </div>
         </div>
-      </div>
 
-      <div class="note" id="dtNote" style="margin:0 0 13px">—</div>
-
-      <div class="charts" id="charts"></div>
-
-      <div class="card pad">
-        <div class="sect">Statistics for this period</div>
-        <table class="stats" id="statTable"></table>
-      </div>
-    </section>
-
-    <!-- ================= EXPORT ================= -->
-    <section class="view" id="v-export">
-      <div class="head">
-        <div>
-          <h1>Export</h1>
-          <p>Full resolution — every reading in the period, not the thinned view.</p>
+        <div class="chips" id="measChips">
+          <button class="chip on" data-m="all"><span class="cic"><svg class="ic sm"><use href="#i-chart"/></svg></span>All</button>
+          <button class="chip" data-m="T"><span class="cic"><svg class="ic sm"><use href="#i-temp"/></svg></span>Temperature</button>
+          <button class="chip" data-m="H"><span class="cic"><svg class="ic sm"><use href="#i-drop"/></svg></span>Humidity</button>
+          <button class="chip" data-m="V"><span class="cic"><svg class="ic sm"><use href="#i-wind"/></svg></span>Air velocity</button>
         </div>
-      </div>
 
-      <div class="card pad" style="margin-bottom:14px">
-        <div class="sect">Period</div>
-        <div class="grid2">
-          <div class="dtwrap">
-            <label>From</label>
-            <input type="text" id="exFrom" placeholder="2026-11-07 00:00" spellcheck="false" autocomplete="off">
-            <div class="dtpop" id="pop-exFrom"></div>
-          </div>
-          <div class="dtwrap">
-            <label>To</label>
-            <input type="text" id="exTo" placeholder="2026-11-07 23:59" spellcheck="false" autocomplete="off">
-            <div class="dtpop" id="pop-exTo"></div>
+        <div class="toolbar">
+          <div><label>Date</label><select id="selDate"></select></div>
+          <div id="wrapSpan"><label>Time range</label><select id="selSpan"></select></div>
+          <div id="wrapFrom" style="display:none"><label>From</label><select id="selFrom"></select></div>
+          <div id="wrapTo" style="display:none"><label>To</label><select id="selTo"></select></div>
+          <div style="min-width:0">
+            <label>Compare with</label>
+            <div class="seg" id="cmpSeg">
+              <button class="on" data-c="none">Off</button>
+              <button data-c="1">Yesterday</button>
+              <button data-c="7">Last week</button>
+            </div>
           </div>
         </div>
-        <div class="quick">
-          <button class="btn sm" data-q="view">Match detail view</button>
-          <button class="btn sm" data-q="today">Today</button>
-          <button class="btn sm" data-q="yesterday">Yesterday</button>
-          <button class="btn sm" data-q="7">Last 7 days</button>
-          <button class="btn sm" data-q="30">Last 30 days</button>
-          <button class="btn sm" data-q="all">Everything</button>
+
+        <div class="note" id="dtNote" style="margin:0 0 14px">—</div>
+        <div class="charts" id="charts"></div>
+
+        <div class="card pad">
+          <div class="sect">Statistics for this period</div>
+          <table class="stats" id="statTable"></table>
         </div>
-      </div>
+      </section>
 
-      <div class="card pad">
-        <div class="sect">File</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn pri" id="bXlsx">Excel with charts</button>
-          <button class="btn" id="bXlsxPlain">Excel, data only</button>
-          <button class="btn" id="bCsv">CSV</button>
+      <!-- ============ EXPORT ============ -->
+      <section class="view" id="v-export">
+        <div class="toprow">
+          <div>
+            <div class="h1"><span>Export</span></div>
+            <p class="sub">Full resolution — every reading in the period, not the thinned view.</p>
+          </div>
         </div>
-        <div class="note" id="exNote">Pick a period, then a file type.</div>
-      </div>
-    </section>
 
-    <!-- ================= SETTINGS ================= -->
-    <section class="view" id="v-settings">
-      <div class="head">
-        <div>
-          <h1>Settings</h1>
-          <p>Saved in this browser only.</p>
+        <div class="card pad" style="margin-bottom:16px">
+          <div class="sect">Period</div>
+          <div class="grid2">
+            <div class="dtwrap">
+              <label>From</label>
+              <input type="text" id="exFrom" placeholder="2026-11-07 00:00" spellcheck="false" autocomplete="off">
+              <div class="dtpop" id="pop-exFrom"></div>
+            </div>
+            <div class="dtwrap">
+              <label>To</label>
+              <input type="text" id="exTo" placeholder="2026-11-07 23:59" spellcheck="false" autocomplete="off">
+              <div class="dtpop" id="pop-exTo"></div>
+            </div>
+          </div>
+          <div class="quick">
+            <button class="btn sm" data-q="view">Match detail view</button>
+            <button class="btn sm" data-q="today">Today</button>
+            <button class="btn sm" data-q="yesterday">Yesterday</button>
+            <button class="btn sm" data-q="7">Last 7 days</button>
+            <button class="btn sm" data-q="30">Last 30 days</button>
+            <button class="btn sm" data-q="all">Everything</button>
+          </div>
         </div>
-      </div>
 
-      <div class="setwrap">
-        <nav class="setnav" id="setNav">
-          <button class="on" data-stab="connection"><span class="ic">⇄</span>Connection</button>
-          <button data-stab="appearance"><span class="ic">◐</span>Appearance</button>
-          <button data-stab="data"><span class="ic">▤</span>Data</button>
-          <button data-stab="account"><span class="ic">◎</span>Account</button>
-          <button data-stab="activity"><span class="ic">≡</span>Activity log</button>
-        </nav>
+        <div class="card pad">
+          <div class="sect">File</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn pri" id="bXlsx">Excel with charts</button>
+            <button class="btn" id="bXlsxPlain">Excel, data only</button>
+            <button class="btn" id="bCsv">CSV</button>
+          </div>
+          <div class="note" id="exNote">Pick a period, then a file type.</div>
+        </div>
+      </section>
 
-        <div>
-          <!-- connection -->
-          <div class="setpane on" id="sp-connection">
-            <div class="sethead"><h2>Connection</h2><p>Where the data comes from and how often it updates.</p></div>
-            <div class="card pad">
-              <div class="grid2">
-                <div>
-                  <label>API address</label>
-                  <input id="api" value="" placeholder="http://3.26.219.220:8080">
-                  <div class="note" style="margin-top:6px">Leave empty to use the server this page came from.</div>
-                </div>
-                <div>
-                  <label>Refresh every</label>
-                  <select id="poll">
-                    <option value="0">Off</option>
-                    <option value="10">10 seconds</option>
-                    <option value="30" selected>30 seconds</option>
-                    <option value="60">1 minute</option>
-                    <option value="300">5 minutes</option>
-                  </select>
-                  <div class="note" style="margin-top:6px">The sensor publishes about every 30 seconds.</div>
+      <!-- ============ SETTINGS ============ -->
+      <section class="view" id="v-settings">
+        <div class="toprow">
+          <div>
+            <div class="h1"><span>Settings</span></div>
+            <p class="sub">Saved in this browser only.</p>
+          </div>
+        </div>
+
+        <div class="setwrap">
+          <nav class="setnav" id="setNav">
+            <button class="on" data-stab="connection">Connection</button>
+            <button data-stab="appearance">Appearance</button>
+            <button data-stab="data">Data</button>
+            <button data-stab="account">Account</button>
+            <button data-stab="activity">Activity log</button>
+          </nav>
+
+          <div>
+            <div class="setpane on" id="sp-connection">
+              <div class="sethead"><h2>Connection</h2><p>Where the data comes from and how often it updates.</p></div>
+              <div class="card pad">
+                <div class="grid2">
+                  <div>
+                    <label>API address</label>
+                    <input id="api" value="" placeholder="http://3.26.219.220:8080">
+                    <div class="note" style="margin-top:7px">Leave empty to use the server this page came from.</div>
+                  </div>
+                  <div>
+                    <label>Refresh every</label>
+                    <select id="poll">
+                      <option value="0">Off</option><option value="10">10 seconds</option>
+                      <option value="30" selected>30 seconds</option><option value="60">1 minute</option>
+                      <option value="300">5 minutes</option>
+                    </select>
+                    <div class="note" style="margin-top:7px">The sensor publishes about every 30 seconds.</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- appearance -->
-          <div class="setpane" id="sp-appearance">
-            <div class="sethead"><h2>Appearance</h2><p>Pick a theme, then adjust the colours if you like. Changes apply straight away.</p></div>
-            <div class="card pad">
-              <div class="sect">Theme</div>
-              <div class="themes" id="themeGrid"></div>
-            </div>
-            <div class="card pad">
-              <div class="sect">Colours</div>
-              <div class="crow"><div class="nm"><b>Accent</b><small>Buttons, selected tabs, highlights</small></div>
-                <input type="color" class="cpick" id="cAccent"><input class="chex" id="hAccent" maxlength="7"></div>
-              <div class="crow"><div class="nm"><b>Inlet line</b><small>Inlet side on every chart</small></div>
-                <input type="color" class="cpick" id="cIn"><input class="chex" id="hIn" maxlength="7"></div>
-              <div class="crow"><div class="nm"><b>Outlet line</b><small>Outlet side on every chart</small></div>
-                <input type="color" class="cpick" id="cOut"><input class="chex" id="hOut" maxlength="7"></div>
-              <div class="note" id="cNote"></div>
-            </div>
-            <div class="card pad">
-              <div class="sect">Preview</div>
-              <div class="preview">
-                <svg viewBox="0 0 400 90" preserveAspectRatio="none" aria-label="Colour preview">
-                  <g stroke="var(--grid)" stroke-width="1">
-                    <line x1="0" y1="22" x2="400" y2="22"/><line x1="0" y1="45" x2="400" y2="45"/><line x1="0" y1="68" x2="400" y2="68"/>
-                  </g>
-                  <polyline fill="none" stroke="var(--out)" stroke-width="2.5"
-                    points="0,60 40,58 70,20 100,48 130,18 165,50 200,24 240,55 290,62 340,63 400,62"/>
-                  <polyline fill="none" stroke="var(--in)" stroke-width="2.5"
-                    points="0,70 60,69 120,71 180,70 240,68 300,69 360,67 400,68"/>
-                </svg>
-                <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
-                  <button class="btn pri sm" type="button">Primary button</button>
-                  <button class="btn sm" type="button">Secondary</button>
-                  <span class="lg" style="margin-left:auto"><span><i style="background:var(--in)"></i>Inlet</span>
-                    <span><i style="background:var(--out)"></i>Outlet</span></span>
+            <div class="setpane" id="sp-appearance">
+              <div class="sethead"><h2>Appearance</h2><p>Pick a theme, then change any colour on the page. Everything updates straight away.</p></div>
+              <div class="card pad">
+                <div class="sect">Theme</div>
+                <div class="themes" id="themeGrid"></div>
+              </div>
+              <div class="card pad">
+                <div class="sect">Every colour</div>
+                <div id="colourGroups"></div>
+                <div class="note" id="cNote"></div>
+                <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">
+                  <button class="btn sm" id="cReset" type="button">Reset to theme defaults</button>
+                  <button class="btn sm" id="cCopy" type="button">Copy my colours</button>
+                  <button class="btn sm" id="cPaste" type="button">Paste colours</button>
                 </div>
               </div>
-              <div style="margin-top:12px"><button class="btn sm" id="cReset" type="button">Reset to theme defaults</button></div>
-            </div>
-          </div>
-
-          <!-- data -->
-          <div class="setpane" id="sp-data">
-            <div class="sethead"><h2>Data</h2><p>How charts are drawn and when a room counts as stale.</p></div>
-            <div class="card pad">
-              <div class="grid2">
-                <div>
-                  <label>Chart detail</label>
-                  <select id="maxpts">
-                    <option value="300">300 points</option>
-                    <option value="600" selected>600 points</option>
-                    <option value="1200">1200 points</option>
-                    <option value="3000">3000 points</option>
-                  </select>
-                  <div class="note" style="margin-top:6px">More points show more detail but draw slower.</div>
-                </div>
-                <div>
-                  <label>Treat data as stale after</label>
-                  <select id="staleAfter">
-                    <option value="120">2 minutes</option>
-                    <option value="300" selected>5 minutes</option>
-                    <option value="900">15 minutes</option>
-                    <option value="3600">1 hour</option>
-                  </select>
-                  <div class="note" style="margin-top:6px">Controls the badge on Overview.</div>
+              <div class="card pad">
+                <div class="sect">Preview</div>
+                <div class="preview">
+                  <div class="tiles" style="margin:0 0 12px;grid-template-columns:1fr 1fr 1fr;gap:10px">
+                    <div class="tile temp" style="padding:12px 13px;cursor:default">
+                      <div class="tile-top" style="margin-bottom:9px">
+                        <span class="tile-ic" style="width:26px;height:26px;border-radius:9px"><svg class="ic sm"><use href="#i-temp"/></svg></span>
+                        <span class="nm">Temp</span></div>
+                      <div class="vcol"><div class="vv" style="font-size:21px">24.7</div></div>
+                    </div>
+                    <div class="tile hum" style="padding:12px 13px;cursor:default">
+                      <div class="tile-top" style="margin-bottom:9px">
+                        <span class="tile-ic" style="width:26px;height:26px;border-radius:9px"><svg class="ic sm"><use href="#i-drop"/></svg></span>
+                        <span class="nm">Hum</span></div>
+                      <div class="vcol"><div class="vv" style="font-size:21px">90.2</div></div>
+                    </div>
+                    <div class="tile vel" style="padding:12px 13px;cursor:default">
+                      <div class="tile-top" style="margin-bottom:9px">
+                        <span class="tile-ic" style="width:26px;height:26px;border-radius:9px"><svg class="ic sm"><use href="#i-wind"/></svg></span>
+                        <span class="nm">Vel</span></div>
+                      <div class="vcol"><div class="vv" style="font-size:21px">0.00</div></div>
+                    </div>
+                  </div>
+                  <div class="card" style="padding:12px 14px">
+                    <svg viewBox="0 0 400 74" preserveAspectRatio="none" style="width:100%;height:74px" aria-label="Colour preview">
+                      <g stroke="var(--grid)" stroke-width="1">
+                        <line x1="0" y1="18" x2="400" y2="18"/><line x1="0" y1="37" x2="400" y2="37"/><line x1="0" y1="56" x2="400" y2="56"/>
+                      </g>
+                      <polyline fill="none" stroke="var(--out)" stroke-width="2.5"
+                        points="0,50 40,48 70,16 100,40 130,14 165,42 200,20 240,46 290,52 340,53 400,52"/>
+                      <polyline fill="none" stroke="var(--in)" stroke-width="2.5"
+                        points="0,60 60,59 120,61 180,60 240,58 300,59 360,57 400,58"/>
+                    </svg>
+                    <div style="display:flex;gap:9px;align-items:center;margin-top:11px;flex-wrap:wrap">
+                      <button class="btn pri sm" type="button">Primary</button>
+                      <button class="btn sm" type="button">Secondary</button>
+                      <span class="pill" style="margin-left:auto"><span class="dot on"></span>Live</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="card pad">
-              <div class="sect">Rooms</div>
-              <div class="note" style="margin:0 0 10px">Showing more than one room needs a change on the server, which hasn't been made yet.</div>
-              <table class="stats">
-                <tr><th>Room</th><th>Source</th><th>Readings</th></tr>
-                <tr><td>Cool room 1</td><td id="srcTx">—</td><td id="cntTx">—</td></tr>
-              </table>
-            </div>
-          </div>
 
-          <!-- account -->
-          <div class="setpane" id="sp-account">
-            <div class="sethead"><h2>Account</h2><p>Your sign-in on this device.</p></div>
-            <div class="card pad">
-              <table class="stats">
-                <tr><td>Signed in as</td><td id="accName">—</td></tr>
-                <tr><td>Session</td><td id="accSess">—</td></tr>
-              </table>
-              <div style="margin-top:14px"><button class="btn" id="accLogout" type="button">Sign out</button></div>
-            </div>
-            <div class="card pad">
-              <div class="sect">About this sign-in</div>
-              <div class="note" style="margin:0">
-                The sign-in keeps casual visitors out of the dashboard. It runs in the browser, so it does
-                not lock the data itself. For real protection the server has to check the password too.
+            <div class="setpane" id="sp-data">
+              <div class="sethead"><h2>Data</h2><p>How charts are drawn and when a room counts as stale.</p></div>
+              <div class="card pad">
+                <div class="grid2">
+                  <div>
+                    <label>Chart detail</label>
+                    <select id="maxpts">
+                      <option value="300">300 points</option><option value="600" selected>600 points</option>
+                      <option value="1200">1200 points</option><option value="3000">3000 points</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label>Treat data as stale after</label>
+                    <select id="staleAfter">
+                      <option value="120">2 minutes</option><option value="300" selected>5 minutes</option>
+                      <option value="900">15 minutes</option><option value="3600">1 hour</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="card pad">
+                <div class="sect">Rooms</div>
+                <div class="note" style="margin:0 0 11px">Showing more than one room needs a change on the server, which hasn't been made yet.</div>
+                <table class="stats">
+                  <tr><th>Room</th><th>Source</th><th>Readings</th></tr>
+                  <tr><td>Cool room 1</td><td id="srcTx">—</td><td id="cntTx">—</td></tr>
+                </table>
               </div>
             </div>
-          </div>
 
-          <!-- activity -->
-          <div class="setpane" id="sp-activity">
-            <div class="sethead"><h2>Activity log</h2><p>What the page has been doing, newest at the bottom.</p></div>
-            <div class="card pad">
-              <div class="log" id="logb"><span class="muted">Starting…</span></div>
+            <div class="setpane" id="sp-account">
+              <div class="sethead"><h2>Account</h2><p>Your sign-in on this device.</p></div>
+              <div class="card pad">
+                <table class="stats">
+                  <tr><td>Signed in as</td><td id="accName">—</td></tr>
+                  <tr><td>Session</td><td id="accSess">—</td></tr>
+                </table>
+                <div style="margin-top:16px"><button class="btn" id="accLogout" type="button">Sign out</button></div>
+              </div>
+              <div class="card pad">
+                <div class="sect">About this sign-in</div>
+                <div class="note" style="margin:0">
+                  The sign-in keeps casual visitors out of the dashboard. It runs in the browser, so it does
+                  not lock the data itself. For real protection the server has to check the password too.
+                </div>
+              </div>
+            </div>
+
+            <div class="setpane" id="sp-activity">
+              <div class="sethead"><h2>Activity log</h2><p>What the page has been doing, newest at the bottom.</p></div>
+              <div class="card pad"><div class="log" id="logb"><span class="note">Starting…</span></div></div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
 
-  </main>
+    <!-- ============ RIGHT PANEL ============ -->
+    <aside class="side" id="sidePanel">
+      <div class="pcard">
+        <div class="statusbig">
+          <div class="ring" id="ring">—</div>
+          <b id="ringTitle">—</b>
+          <p id="ringNote">—</p>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="phead"><div class="h2">Right now</div></div>
+        <div class="mini" id="miniGrid"></div>
+      </div>
+      <div class="pcard">
+        <div class="phead"><div class="h2">Data health</div></div>
+        <div class="srow"><span class="k">Last reading</span><span class="v" id="hLast">—</span></div>
+        <div class="srow"><span class="k">Readings today</span><span class="v" id="hToday">—</span></div>
+        <div class="srow"><span class="k">Days stored</span><span class="v" id="hDays">—</span></div>
+        <div class="srow"><span class="k">Gap since last</span><span class="v" id="hGap">—</span></div>
+      </div>
+    </aside>
+  </div>
 </div>
 
 <nav class="mnav">
-  <button class="on" data-go="overview"><span class="ic">◉</span>Overview</button>
-  <button data-go="detail"><span class="ic">◭</span>Detail</button>
-  <button data-go="export"><span class="ic">↓</span>Export</button>
-  <button data-go="settings"><span class="ic">⚙</span>Settings</button>
+  <button class="on" data-go="overview"><svg class="ic sm"><use href="#i-home"/></svg>Overview</button>
+  <button data-go="detail"><svg class="ic sm"><use href="#i-chart"/></svg>Detail</button>
+  <button data-go="export"><svg class="ic sm"><use href="#i-down"/></svg>Export</button>
+  <button data-go="settings"><svg class="ic sm"><use href="#i-gear"/></svg>Settings</button>
 </nav>
 
 <script>
@@ -654,9 +721,9 @@ var DEFS=[
 ];
 var KEYS=DEFS.map(function(d){return d.k;});
 var GROUPS=[
-  {id:'T',title:'Temperature', short:'Temp',unit:'°C', a:'T_in',b:'T_out',dec:1},
-  {id:'H',title:'Humidity',    short:'Hum', unit:'%RH',a:'H_in',b:'H_out',dec:1},
-  {id:'V',title:'Air velocity',short:'Vel', unit:'m/s',a:'V_in',b:'V_out',dec:2}
+  {id:'T',title:'Temperature', short:'Temp',unit:'°C', a:'T_in',b:'T_out',dec:1,cls:'temp',icon:'i-temp'},
+  {id:'H',title:'Humidity',    short:'Hum', unit:'%RH',a:'H_in',b:'H_out',dec:1,cls:'hum', icon:'i-drop'},
+  {id:'V',title:'Air velocity',short:'Vel', unit:'m/s',a:'V_in',b:'V_out',dec:2,cls:'vel', icon:'i-wind'}
 ];
 var SPANS=[
   {id:'15m',label:'Last 15 minutes',ms:15*60e3},
@@ -719,9 +786,10 @@ function log(t,c){
   while(b.childNodes.length>200) b.removeChild(b.firstChild);
   b.scrollTop=b.scrollHeight;
 }
+function setTx(id,val){ var e=$(id); if(e) e.textContent=val; }
 function setConn(text,kind){
   ['dot','dot2'].forEach(function(id){ var e=$(id); if(e) e.className='dot'+(kind?' '+kind:''); });
-  $('connTx').textContent=text; $('conn2').textContent=text;
+  setTx('connTx',text); setTx('conn2',text);
 }
 
 function sha256(str){
@@ -759,108 +827,193 @@ function sha256(str){
   return H.map(function(x){return ('00000000'+(x>>>0).toString(16)).slice(-8);}).join('');
 }
 
-/* ================= themes ================= */
+/* ================= themes: every colour on the page ================= */
+var TOKENS=[
+  {g:'Page',   d:'The overall surfaces behind everything',
+   items:[['bg','Background','Behind every panel'],
+          ['panel','Card surface','Cards, toolbars, the rail'],
+          ['panel2','Inset surface','Inputs and inner boxes'],
+          ['line','Divider','Hairlines between rows'],
+          ['hover','Hover tint','Buttons and rows under the cursor']]},
+  {g:'Text',   d:'Reading colours, in order of emphasis',
+   items:[['tx','Main text','Headings and values'],
+          ['tx2','Secondary text','Labels and descriptions'],
+          ['tx3','Faint text','Hints and units']]},
+  {g:'Accent', d:'The colour of anything selected or primary',
+   items:[['accent','Accent','Active page, primary buttons, chips'],
+          ['accent-tx','On accent','Text sitting on the accent colour']]},
+  {g:'Charts', d:'The two sensor lines and the chart frame',
+   items:[['in','Inlet line','Inlet side on every chart'],
+          ['out','Outlet line','Outlet side on every chart'],
+          ['grid','Chart grid','Gridlines inside charts'],
+          ['tick','Chart labels','Axis numbers and titles']]},
+  {g:'Measurement cards', d:'The pastel blocks on Overview',
+   items:[['t-temp','Temperature card','Background of the temperature tile'],
+          ['t-hum','Humidity card','Background of the humidity tile'],
+          ['t-vel','Velocity card','Background of the air velocity tile']]},
+  {g:'Status', d:'Badges, dots and warnings',
+   items:[['ok','Good','Live badge and success text'],
+          ['warn','Warning','Stale data'],
+          ['err','Problem','Errors and stopped sensors']]}
+];
+var TKEYS=[]; TOKENS.forEach(function(g){ g.items.forEach(function(it){ TKEYS.push(it[0]); }); });
+
 var THEMES={
-  dark:    {name:'Dark',    note:'Default',        bg:'#0d1117',panel:'#161b22',panel2:'#1c2330',line:'#2a3340',line2:'#374151',
-            tx:'#e6edf3',tx2:'#8b96a5',tx3:'#5f6b7a',hover:'#232b38',grid:'#1f2733',tick:'#5f6b7a',
-            accent:'#1f6feb',in:'#58a6ff',out:'#ff9f40'},
-  navy:    {name:'Navy',    note:'Deep blue',      bg:'#0a1020',panel:'#101a30',panel2:'#17233d',line:'#243453',line2:'#31446b',
-            tx:'#e4ecf7',tx2:'#93a4c0',tx3:'#62738f',hover:'#1c2a47',grid:'#18233d',tick:'#62738f',
-            accent:'#3b82f6',in:'#60a5fa',out:'#fbbf24'},
-  graphite:{name:'Graphite',note:'Neutral grey',   bg:'#111111',panel:'#1a1a1a',panel2:'#222222',line:'#2e2e2e',line2:'#3d3d3d',
-            tx:'#ececec',tx2:'#a3a3a3',tx3:'#737373',hover:'#2a2a2a',grid:'#262626',tick:'#737373',
-            accent:'#10b981',in:'#34d399',out:'#f472b6'},
-  light:   {name:'Light',   note:'Bright, prints well', bg:'#f4f6f9',panel:'#ffffff',panel2:'#f1f4f8',line:'#e3e8ef',line2:'#cfd6e0',
-            tx:'#0f172a',tx2:'#475569',tx3:'#8a96a8',hover:'#eaeef4',grid:'#edf1f5',tick:'#64748b',
-            accent:'#2563eb',in:'#2563eb',out:'#ea580c'}
+  pastel:{name:'Pastel',note:'Soft and bright',
+    bg:'#f3f1ec',panel:'#ffffff',panel2:'#faf9f6',line:'#ebe8e1',hover:'#f2f0ea',
+    tx:'#16161a',tx2:'#6f6c66',tx3:'#a3a09a','accent':'#16161a','accent-tx':'#ffffff',
+    in:'#2f6df0',out:'#ef6b3b',grid:'#eeece6',tick:'#a3a09a',
+    't-temp':'#fbe3dc','t-hum':'#e7e3fb','t-vel':'#d8f1e4',
+    ok:'#2f9e68',warn:'#d79a2b',err:'#dd4f43'},
+  mint:{name:'Mint',note:'Cool and calm',
+    bg:'#eef5f1',panel:'#ffffff',panel2:'#f6faf8',line:'#e2ece7',hover:'#eaf3ee',
+    tx:'#12241c',tx2:'#5c6f66',tx3:'#96a79f','accent':'#0f7a53','accent-tx':'#ffffff',
+    in:'#1d7fd4',out:'#e4683d',grid:'#e8f1ec',tick:'#96a79f',
+    't-temp':'#ffe6da',"t-hum":'#dbe9fb','t-vel':'#cdeedd',
+    ok:'#0f7a53',warn:'#c58a1f',err:'#d4483d'},
+  dark:{name:'Dark',note:'Low light',
+    bg:'#0d1117',panel:'#161b22',panel2:'#1c2330',line:'#2a3340',hover:'#232b38',
+    tx:'#e6edf3',tx2:'#8b96a5',tx3:'#5f6b7a','accent':'#1f6feb','accent-tx':'#ffffff',
+    in:'#58a6ff',out:'#ff9f40',grid:'#1f2733',tick:'#5f6b7a',
+    't-temp':'#2e2022','t-hum':'#1e2438','t-vel':'#172a26',
+    ok:'#3fb950',warn:'#d29922',err:'#f85149'},
+  navy:{name:'Navy',note:'Deep blue',
+    bg:'#0a1020',panel:'#101a30',panel2:'#17233d',line:'#243453',hover:'#1c2a47',
+    tx:'#e4ecf7',tx2:'#93a4c0',tx3:'#62738f','accent':'#3b82f6','accent-tx':'#ffffff',
+    in:'#60a5fa',out:'#fbbf24',grid:'#18233d',tick:'#62738f',
+    't-temp':'#2a1f2e','t-hum':'#172448','t-vel':'#132c34',
+    ok:'#34d399',warn:'#fbbf24',err:'#f87171'},
+  paper:{name:'Paper',note:'Prints well',
+    bg:'#ffffff',panel:'#ffffff',panel2:'#f6f6f6',line:'#e2e2e2',hover:'#f0f0f0',
+    tx:'#111111',tx2:'#555555',tx3:'#8a8a8a','accent':'#1a56db','accent-tx':'#ffffff',
+    in:'#1a56db',out:'#c2410c',grid:'#ececec',tick:'#777777',
+    't-temp':'#f6eceb','t-hum':'#ecf0f8','t-vel':'#eaf3ee',
+    ok:'#15803d',warn:'#a16207',err:'#b91c1c'}
 };
-var TKEY='coolroom_theme_v1', TH={}, TSTATE={preset:'dark'};
+var TKEY='coolroom_theme_v2', TH={}, TSTATE={preset:'pastel'};
 try{ TSTATE=JSON.parse(localStorage.getItem(TKEY)||'{}')||{}; }catch(e){ TSTATE={}; }
-if(!THEMES[TSTATE.preset]) TSTATE.preset='dark';
+if(!THEMES[TSTATE.preset]) TSTATE.preset='pastel';
 
 function hexOk(h){ return /^#[0-9a-fA-F]{6}$/.test(h||''); }
 function hexA(h,a){ var n=parseInt(String(h).slice(1),16);
   return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
+function lum(h){ var n=parseInt(h.slice(1),16);
+  var f=function(c){ c/=255; return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4); };
+  return .2126*f((n>>16)&255)+.7152*f((n>>8)&255)+.0722*f(n&255); }
+function contrast(a,b){ var x=lum(a),y=lum(b); var hi=Math.max(x,y),lo=Math.min(x,y);
+  return (hi+.05)/(lo+.05); }
 function hexDist(a,b){ var x=parseInt(a.slice(1),16), y=parseInt(b.slice(1),16);
   var dr=((x>>16)&255)-((y>>16)&255), dg=((x>>8)&255)-((y>>8)&255), db=(x&255)-(y&255);
   return Math.sqrt(dr*dr+dg*dg+db*db); }
+
 function computeTheme(){
   var base=THEMES[TSTATE.preset]; TH={};
-  for(var k in base) TH[k]=base[k];
-  ['accent','in','out'].forEach(function(k){ if(hexOk(TSTATE[k])) TH[k]=TSTATE[k].toLowerCase(); });
+  TKEYS.forEach(function(k){ TH[k]=base[k]; });
+  TKEYS.forEach(function(k){ if(hexOk(TSTATE[k])) TH[k]=TSTATE[k].toLowerCase(); });
 }
 function paintVars(){
   var r=document.documentElement.style;
-  ['bg','panel','panel2','line','line2','tx','tx2','tx3','hover','grid','tick','accent','in','out']
-    .forEach(function(k){ r.setProperty('--'+k,TH[k]); });
-  r.setProperty('--accent-tint',hexA(TH.accent,0.15));
-  r.setProperty('--hum',TH.in);
-  document.documentElement.style.colorScheme = (TSTATE.preset==='light') ? 'light' : 'dark';
+  TKEYS.forEach(function(k){ r.setProperty('--'+k,TH[k]); });
+  r.setProperty('--line2',TH.line);
+  r.setProperty('--rail',TH.panel);
+  document.documentElement.style.colorScheme=(lum(TH.bg)<0.4)?'dark':'light';
 }
 function rebuildCharts(){
   if(!S.started) return;
   S.zoomed=false;
   buildCharts();
-  if(S.ovChart){ S.ovChart.destroy(); S.ovChart=null; }
-  if(S.spark){ S.spark.destroy(); S.spark=null; }
+  if(S.sparks){ Object.keys(S.sparks).forEach(function(k){ try{S.sparks[k].destroy();}catch(e){} }); S.sparks=null; }
   renderOvChart();
   renderDetail(windowBounds());
 }
+var rbTimer=null;
+function rebuildSoon(){ clearTimeout(rbTimer); rbTimer=setTimeout(rebuildCharts,260); }
 function applyTheme(rebuild){
   computeTheme(); paintVars();
   try{ localStorage.setItem(TKEY,JSON.stringify(TSTATE)); }catch(e){}
   syncThemeUI();
   if(rebuild) rebuildCharts();
 }
-var rebuildTimer=null;
-function rebuildSoon(){ clearTimeout(rebuildTimer); rebuildTimer=setTimeout(rebuildCharts,250); }
 
 function buildThemeGrid(){
   var g=$('themeGrid'); g.innerHTML='';
   Object.keys(THEMES).forEach(function(id){
-    var t=THEMES[id], b=el('button','theme');
-    b.type='button'; b.dataset.theme=id;
-    b.innerHTML='<div class="sw"><span style="background:'+t.bg+'"></span><span style="background:'+t.panel+
-      '"></span><span style="background:'+t.accent+'"></span><span style="background:'+t.in+
-      '"></span><span style="background:'+t.out+'"></span></div><b>'+t.name+'</b><small>'+t.note+'</small>';
+    var t=THEMES[id], b=el('button','theme'); b.type='button'; b.dataset.theme=id;
+    b.innerHTML='<div class="sw"><span style="background:'+t.bg+'"></span>'+
+      '<span style="background:'+t['t-temp']+'"></span><span style="background:'+t['t-hum']+'"></span>'+
+      '<span style="background:'+t['t-vel']+'"></span><span style="background:'+t.accent+'"></span>'+
+      '</div><b>'+t.name+'</b><small>'+t.note+'</small>';
     b.onclick=function(){ TSTATE={preset:id}; applyTheme(true); log('Theme changed to '+t.name,'s'); };
     g.appendChild(b);
   });
 }
-var CFIELDS=[['accent','cAccent','hAccent'],['in','cIn','hIn'],['out','cOut','hOut']];
-function syncThemeUI(){
-  var g=$('themeGrid'); if(!g) return;
-  Array.prototype.forEach.call(g.children,function(b){ b.classList.toggle('on',b.dataset.theme===TSTATE.preset); });
-  CFIELDS.forEach(function(f){
-    var cp=$(f[1]), hx=$(f[2]);
-    if(cp && cp.value.toLowerCase()!==TH[f[0]]) cp.value=TH[f[0]];
-    if(hx && document.activeElement!==hx) hx.value=TH[f[0]];
+function buildColourRows(){
+  var host=$('colourGroups'); host.innerHTML='';
+  TOKENS.forEach(function(grp){
+    var box=el('div','cgroup');
+    box.innerHTML='<div class="gt">'+grp.g+'</div><div class="gd">'+grp.d+'</div>';
+    grp.items.forEach(function(it){
+      var k=it[0];
+      var row=el('div','crow');
+      row.innerHTML='<div class="nm"><b>'+it[1]+'</b><small>'+it[2]+'</small></div>'+
+        '<input type="color" class="cpick" id="cp-'+k+'">'+
+        '<input class="chex" id="hx-'+k+'" maxlength="7" spellcheck="false">';
+      box.appendChild(row);
+    });
+    host.appendChild(box);
   });
-  var custom=CFIELDS.some(function(f){ return hexOk(TSTATE[f[0]]); });
-  var msg = custom ? 'Custom colours on top of the '+THEMES[TSTATE.preset].name+' theme.'
-                   : 'Using the '+THEMES[TSTATE.preset].name+' theme colours.';
-  if(hexDist(TH['in'],TH.out)<70) msg+=' Inlet and outlet look very similar — they may be hard to tell apart on the charts.';
-  if(hexDist(TH.accent,TH.bg)<70) msg+=' The accent is close to the background, so buttons may be hard to see.';
-  $('cNote').textContent=msg;
-}
-function wireColours(){
-  CFIELDS.forEach(function(f){
-    var key=f[0], cp=$(f[1]), hx=$(f[2]);
+  TKEYS.forEach(function(k){
+    var cp=$('cp-'+k), hx=$('hx-'+k);
     cp.addEventListener('input',function(){
-      TSTATE[key]=cp.value.toLowerCase(); hx.value=TSTATE[key];
-      applyTheme(false); rebuildSoon();
+      TSTATE[k]=cp.value.toLowerCase(); hx.value=TSTATE[k]; applyTheme(false); rebuildSoon();
     });
     hx.addEventListener('change',function(){
       var v=hx.value.trim(); if(v && v[0]!=='#') v='#'+v;
-      if(hexOk(v)){ TSTATE[key]=v.toLowerCase(); applyTheme(true); }
-      else { hx.value=TH[key]; $('cNote').textContent='Use a 6-digit colour code such as #1f6feb.'; }
+      if(hexOk(v)){ TSTATE[k]=v.toLowerCase(); applyTheme(true); }
+      else { hx.value=TH[k]; $('cNote').textContent='Use a 6-digit colour code such as #1f6feb.'; }
     });
   });
+}
+function syncThemeUI(){
+  var g=$('themeGrid'); if(!g) return;
+  Array.prototype.forEach.call(g.children,function(b){ b.classList.toggle('on',b.dataset.theme===TSTATE.preset); });
+  TKEYS.forEach(function(k){
+    var cp=$('cp-'+k), hx=$('hx-'+k); if(!cp) return;
+    if(cp.value.toLowerCase()!==TH[k]) cp.value=TH[k];
+    if(document.activeElement!==hx) hx.value=TH[k];
+  });
+  var n=TKEYS.filter(function(k){ return hexOk(TSTATE[k]); }).length;
+  var msg = n ? n+' colour'+(n===1?'':'s')+' changed from the '+THEMES[TSTATE.preset].name+' theme.'
+              : 'Using the '+THEMES[TSTATE.preset].name+' theme colours.';
+  var warn=[];
+  if(contrast(TH.tx,TH.panel)<4.5) warn.push('main text on cards is low contrast');
+  if(contrast(TH['accent-tx'],TH.accent)<3.5) warn.push('text on the accent colour is hard to read');
+  if(hexDist(TH['in'],TH.out)<70) warn.push('inlet and outlet lines look almost the same');
+  if(warn.length) msg+=' Careful: '+warn.join(', ')+'.';
+  $('cNote').textContent=msg;
+}
+function wireColourButtons(){
   $('cReset').onclick=function(){ TSTATE={preset:TSTATE.preset}; applyTheme(true); log('Colours reset','s'); };
+  $('cCopy').onclick=function(){
+    var out=JSON.stringify(TSTATE);
+    var ok=function(){ $('cNote').textContent='Colours copied. Paste them on another device to match.'; };
+    if(navigator.clipboard&&navigator.clipboard.writeText)
+      navigator.clipboard.writeText(out).then(ok,function(){ window.prompt('Copy your colours:',out); });
+    else window.prompt('Copy your colours:',out);
+  };
+  $('cPaste').onclick=function(){
+    var v=window.prompt('Paste colours here:'); if(!v) return;
+    try{
+      var o=JSON.parse(v);
+      if(!o||!THEMES[o.preset]) throw new Error('bad');
+      var clean={preset:o.preset};
+      TKEYS.forEach(function(k){ if(hexOk(o[k])) clean[k]=o[k].toLowerCase(); });
+      TSTATE=clean; applyTheme(true); log('Colours pasted','g');
+    }catch(e){ $('cNote').textContent="That doesn't look like a saved colour set."; }
+  };
 }
 
 /* ================= sign-in ================= */
-/* Only a SHA-256 fingerprint is stored here, never the password itself. */
 var CRED='db052ea83d55e2f6c8466f667ee7f7f4ab29cda73ff09e9583d02772fae4bd9f';
 var ANAME='ILSlab', AKEY='coolroom_auth_v1', AUTH=null, FAIL={n:0,until:0};
 function credHash(u,p){ return sha256('coolroom-v1|'+String(u).trim().toLowerCase()+'|'+p); }
@@ -881,17 +1034,17 @@ function writeAuth(remember){
   try{ (remember?localStorage:sessionStorage).setItem(AKEY,JSON.stringify(a)); }catch(e){}
   return a;
 }
-function clearAuth(){ try{ localStorage.removeItem(AKEY); sessionStorage.removeItem(AKEY); }catch(e){} }
 function logout(){
-  clearAuth(); clearInterval(S.timer);
+  try{ localStorage.removeItem(AKEY); sessionStorage.removeItem(AKEY); }catch(e){}
+  clearInterval(S.timer);
   try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
   location.reload();
 }
 function fillAccount(){
-  $('whoName').textContent=AUTH.u; $('whoAv').textContent=AUTH.u.slice(0,2).toUpperCase();
+  $('railAv').textContent=AUTH.u.slice(0,2).toUpperCase();
   $('accName').textContent=AUTH.u;
-  $('accSess').textContent = AUTH.rem ? 'Kept on this device until '+fmtDT(AUTH.exp,false)
-                                      : 'Ends when you close the browser (at most 12 hours)';
+  $('accSess').textContent=AUTH.rem ? 'Kept on this device until '+fmtDT(AUTH.exp,false)
+                                    : 'Ends when you close the browser (at most 12 hours)';
 }
 function wireLogin(){
   $('lshow').onclick=function(){
@@ -906,8 +1059,7 @@ function wireLogin(){
     if(!u.trim()||!p){ $('lerr').textContent='Enter both a username and a password.'; return; }
     if(credHash(u,p)===CRED){
       FAIL.n=0; $('lerr').textContent=''; $('lp').value='';
-      AUTH=writeAuth($('lrem').checked);
-      startApp();
+      AUTH=writeAuth($('lrem').checked); startApp();
     }else{
       FAIL.n++;
       if(FAIL.n>=5){ FAIL.until=Date.now()+30000; FAIL.n=0; $('lerr').textContent='Too many attempts. Try again in 30 s.'; }
@@ -916,8 +1068,9 @@ function wireLogin(){
       $('lp').select();
     }
   });
-  $('sideLogout').onclick=logout;
+  $('railOut').onclick=logout;
   $('accLogout').onclick=logout;
+  $('railAv').onclick=function(){ go('settings'); setTab('account'); };
 }
 
 /* ================= settings topics ================= */
@@ -942,6 +1095,7 @@ function go(page){
   });
   if(location.hash.slice(1)!==page) location.hash=page;
   window.scrollTo(0,0);
+  var sp=$('sidePanel'); if(sp) sp.classList.toggle('hide', page!=='overview');
   if(page==='detail') setTimeout(function(){ resizeCharts(); }, 30);
   if(page==='overview'||page==='detail') refresh();
 }
@@ -1027,7 +1181,8 @@ function buildCharts(){
   list.forEach(function(g){
     var card=el('div','card ch');
     card.innerHTML=
-      '<div class="ch-h"><b>'+g.title+'</b><span class="u">('+g.unit+')</span>'+
+      '<div class="ch-h '+g.cls+'"><span class="cic"><svg class="ic sm"><use href="#'+g.icon+'"/></svg></span>'+
+      '<b>'+g.title+'</b><span class="u">'+g.unit+'</span>'+
       '<span class="zspan" id="zs-'+g.id+'"></span>'+
       '<div class="lg"><span><i style="background:var(--in)"></i>Inlet</span>'+
       '<span><i style="background:var(--out)"></i>Outlet</span>'+
@@ -1110,78 +1265,102 @@ function renderStats(){
 /* ================= overview ================= */
 function staleMs(){ return (parseInt($('staleAfter').value,10)||300)*1000; }
 
+function chipSet(hostId,key,val){
+  Array.prototype.forEach.call($(hostId).children,function(b){ b.classList.toggle('on',b.dataset[key]===val); });
+}
 function renderOverview(){
-  var grid=$('roomGrid');
-  var fresh = S.cur.t!=null && (Date.now()-S.cur.t) < staleMs();
-  var dead  = S.cur.t!=null && (Date.now()-S.cur.t) > 6*3600e3;
-  var badge = S.cur.t==null ? '<span class="badge down">no data</span>'
-            : fresh ? '<span class="badge live">live</span>'
-            : dead  ? '<span class="badge down">stopped</span>'
-                    : '<span class="badge stale">stale</span>';
-
-  var cells=GROUPS.map(function(g){
-    var vin=S.cur[g.a], vout=S.cur[g.b];
-    var d=(vin==null||vout==null)?null:(vout-vin);
-    return '<div class="cell"><div class="k">'+g.title+'</div>'+
-           '<div class="v">'+fmt(vin,g.dec)+'<u>'+g.unit+'</u></div>'+
-           '<div class="d">out '+fmt(vout,g.dec)+
-           (d==null?'':'  ·  Δ '+(d>0?'+':'')+fmt(d,g.dec))+'</div></div>';
-  }).join('');
-
+  var age=S.cur.t==null?null:Date.now()-S.cur.t;
+  var state=age==null?'down':age<staleMs()?'live':age>6*3600e3?'down':'stale';
+  var grid=$('tileGrid');
   if(!grid.dataset.built){
-    grid.innerHTML=
-      '<div class="card room" id="room-coolroom">'+
-        '<div class="room-h"><b>Cool room 1</b><span id="rBadge"></span></div>'+
-        '<div class="trio" id="rTrio"></div>'+
-        '<div class="spark"><canvas id="rSpark"></canvas></div>'+
-        '<div class="room-f"><span id="rFoot">—</span>'+
-        '<button class="btn sm" id="rOpen">Open detail</button></div>'+
-      '</div>'+
-      '';
+    grid.innerHTML=GROUPS.map(function(g){
+      return '<button class="tile '+g.cls+'" data-open="'+g.id+'">'+
+        '<div class="tile-top"><span class="tile-ic"><svg class="ic"><use href="#'+g.icon+'"/></svg></span>'+
+        '<span class="nm">'+g.title+'</span><span class="delta" id="dl-'+g.id+'">—</span></div>'+
+        '<div class="vals">'+
+          '<div class="vcol"><div class="vk">Inlet</div><div class="vv" id="vi-'+g.id+'">—</div></div>'+
+          '<div class="vcol"><div class="vk">Outlet</div><div class="vv" id="vo-'+g.id+'">—</div></div>'+
+        '</div>'+
+        '<div class="tspark"><canvas id="sp-'+g.id+'"></canvas></div>'+
+        '<div class="tile-f">last 6 hours<span class="go">Open'+
+        '<svg class="ic sm" style="width:14px;height:14px"><use href="#i-arrow"/></svg></span></div></button>';
+    }).join('');
     grid.dataset.built='1';
-    $('rOpen').onclick=function(){ go('detail'); };
+    Array.prototype.forEach.call(grid.querySelectorAll('[data-open]'),function(b){
+      b.onclick=function(){
+        S.meas=b.dataset.open; S.zoomed=false;
+        chipSet('measChips','m',S.meas); buildCharts(); save(); go('detail');
+      };
+    });
   }
-  $('rBadge').innerHTML=badge;
-  $('rTrio').innerHTML=cells;
-  $('rFoot').textContent = S.cur.t==null ? 'never received a reading'
-                         : 'last reading '+fmtT(S.cur.t)+'  ·  '+ago(S.cur.t);
+  GROUPS.forEach(function(g){
+    var vi=S.cur[g.a], vo=S.cur[g.b];
+    $('vi-'+g.id).innerHTML=fmt(vi,g.dec)+'<u>'+g.unit+'</u>';
+    $('vo-'+g.id).innerHTML=fmt(vo,g.dec)+'<u>'+g.unit+'</u>';
+    var d=(vi==null||vo==null)?null:vo-vi;
+    $('dl-'+g.id).textContent = d==null?'—':'Δ '+(d>0?'+':'')+fmt(d,g.dec);
+  });
+
+  $('ovSub').textContent = age==null ? 'No readings received yet.'
+    : 'Last reading '+fmtT(S.cur.t)+', '+ago(S.cur.t)+'.';
+
+  var ring=$('ring');
+  ring.className='ring '+state;
+  ring.textContent = state==='live'?'LIVE':state==='stale'?'STALE':'OFF';
+  $('ringTitle').textContent = state==='live'?'All sensors reporting'
+    : state==='stale'?'Data is late' : age==null?'No data yet':'Sensor stopped';
+  $('ringNote').textContent = age==null ? 'Nothing has arrived from this room.'
+    : state==='live' ? 'Readings arriving normally.'
+    : 'Last reading was '+fmtDT(S.cur.t,false)+'.';
+
+  $('miniGrid').innerHTML=GROUPS.map(function(g){
+    return '<div class="minibox"><div class="k">'+g.short+' in</div><div class="v">'+
+           fmt(S.cur[g.a],g.dec)+'</div></div>';
+  }).join('')+'<div class="minibox"><div class="k">Readings</div><div class="v" id="miniN">—</div></div>';
 }
 
 function renderOvChart(){
-  var recent=S.ovRows.length?S.ovRows:S.rows;
-  if(!S.ovChart){
-    var g=GROUPS[0];
-    S.ovChart=new Chart($('ovChart'),{
-      type:'line',
-      data:{datasets:[ds('Inlet',TH.in),ds('Outlet',TH.out)]},
-      options:(function(){
-        var o=chartOpts(g); 
-        o.plugins.zoom={zoom:{wheel:{enabled:false}},pan:{enabled:false}};
-        return o;
-      })()
-    });
-  }
-  var lo=Date.now()-6*3600e3, hi=Date.now();
-  var pts=recent.filter(function(r){return r.t>=lo;});
-  S.ovChart.options.scales.x.min=lo; S.ovChart.options.scales.x.max=hi;
-  S.ovChart.data.datasets[0].data=pts.map(function(r){return {x:r.t,y:r.T_in};});
-  S.ovChart.data.datasets[1].data=pts.map(function(r){return {x:r.t,y:r.T_out};});
-  S.ovChart.update('none');
+  var hi=Date.now(), lo=hi-6*3600e3;
+  var src=S.ovRows.length?S.ovRows:S.rows;
+  var pts=src.filter(function(r){return r.t>=lo;});
+  S.sparks=S.sparks||{};
+  GROUPS.forEach(function(g){
+    var cv=$('sp-'+g.id); if(!cv) return;
+    if(!S.sparks[g.id]){
+      S.sparks[g.id]=new Chart(cv,{type:'line',
+        data:{datasets:[
+          {data:[],borderColor:TH['in'],borderWidth:1.8,pointRadius:0,tension:.35,fill:false},
+          {data:[],borderColor:TH.out,borderWidth:1.8,pointRadius:0,tension:.35,fill:false}]},
+        options:{responsive:true,maintainAspectRatio:false,animation:false,
+          plugins:{legend:{display:false},tooltip:{enabled:false},
+                   zoom:{zoom:{wheel:{enabled:false}},pan:{enabled:false}}},
+          scales:{x:{type:'linear',display:false},y:{display:false}}}});
+    }
+    var c=S.sparks[g.id];
+    c.options.scales.x.min=lo; c.options.scales.x.max=hi;
+    c.data.datasets[0].data=pts.map(function(r){return {x:r.t,y:r[g.a]};});
+    c.data.datasets[1].data=pts.map(function(r){return {x:r.t,y:r[g.b]};});
+    c.update('none');
+  });
 
-  if(!S.spark){
-    S.spark=new Chart($('rSpark'),{
-      type:'line',
-      data:{datasets:[
-        {data:[],borderColor:TH.in,borderWidth:1.6,pointRadius:0,tension:.35,fill:false},
-        {data:[],borderColor:TH.out,borderWidth:1.6,pointRadius:0,tension:.35,fill:false}]},
-      options:{responsive:true,maintainAspectRatio:false,animation:false,
-        plugins:{legend:{display:false},tooltip:{enabled:false}},
-        scales:{x:{type:'linear',display:false},y:{display:false}}}
-    });
-  }
-  S.spark.data.datasets[0].data=pts.map(function(r){return {x:r.t,y:r.T_in};});
-  S.spark.data.datasets[1].data=pts.map(function(r){return {x:r.t,y:r.T_out};});
-  S.spark.update('none');
+  var mid=new Date(); mid.setHours(0,0,0,0);
+  var today=src.filter(function(r){return r.t>=mid.getTime();});
+  var st=statsFor(today);
+  var h='<tr><th>Sensor</th><th>Latest</th><th>Min</th><th>Max</th><th>Average</th></tr>';
+  DEFS.forEach(function(d){
+    var s=st[d.k];
+    h+='<tr><td>'+d.n+' — '+(d.side==='in'?'inlet':'outlet')+'</td>'+
+      (s?'<td>'+fmt(s.last,d.dec)+' '+d.unit+'</td><td>'+fmt(s.min,d.dec)+'</td><td>'+
+         fmt(s.max,d.dec)+'</td><td>'+fmt(s.avg,d.dec)+'</td>'
+        :'<td colspan="4" style="color:var(--tx3)">no readings today</td>')+'</tr>';
+  });
+  $('todayTable').innerHTML=h;
+
+  if($('miniN')) $('miniN').textContent=today.length;
+  $('hLast').textContent = S.cur.t?fmtT(S.cur.t):'—';
+  $('hToday').textContent = today.length;
+  $('hDays').textContent = S.days.length;
+  $('hGap').textContent = S.cur.t?ago(S.cur.t).replace(' ago',''):'—';
 }
 
 /* ================= data loading ================= */
@@ -1190,8 +1369,8 @@ async function loadDays(){
     var d=await getJSON('/api/days');
     S.days=d.days||[];
     rebuildDates();
-    $('daysTx').textContent=S.days.length+' day'+(S.days.length===1?'':'s')+' stored';
-    $('srcTx').textContent=DEMO?'demo data (file opened locally)':'server default folder';
+    setTx('daysTx',S.days.length+' day'+(S.days.length===1?'':'s')+' stored');
+    setTx('srcTx', DEMO?'demo data (file opened locally)':'server default folder');
     log('Server has '+S.days.length+' days of data','s');
   }catch(e){ log('Could not list days: '+e.message,'e'); }
 }
@@ -1215,8 +1394,8 @@ async function refresh(){
       S.rows=d.readings||[]; S.total=d.total_in_range||0;
     }
     setConn('Connected','on');
-    $('lastTx').textContent = S.cur.t ? 'last '+fmtT(S.cur.t) : 'no readings';
-    $('cntTx').textContent = S.total+' in view';
+    setTx('lastTx', S.cur.t ? 'last '+fmtT(S.cur.t) : 'no readings');
+    setTx('cntTx', S.total+' in view');
 
     renderOverview(); renderOvChart();
     await renderDetail(w);
@@ -1601,7 +1780,7 @@ function segWire(hostId, key, onPick){
     b.classList.toggle('on', b.dataset[key]===(key==='m'?S.meas:S.cmp));
   });
 }
-segWire('measSeg','m',function(v){ S.meas=v; S.zoomed=false; buildCharts(); save(); refresh(); });
+segWire('measChips','m',function(v){ S.meas=v; S.zoomed=false; buildCharts(); save(); refresh(); });
 segWire('cmpSeg','c',function(v){ S.cmp=v; save(); refresh(); });
 
 $('selSpan').onchange=function(){ S.span=this.value; S.zoomed=false; save(); refresh(); };
@@ -1632,7 +1811,7 @@ window.addEventListener('resize',function(){ clearTimeout(S.rz);
   S.rz=setTimeout(resizeCharts,180); });
 
 /* ================= boot ================= */
-buildThemeGrid(); wireColours(); applyTheme(false);
+buildThemeGrid(); buildColourRows(); wireColourButtons(); applyTheme(false);
 load();
 setTab(S.stab||'connection');
 $('selSpan').value=S.span; $('selFrom').value=S.from; $('selTo').value=S.to;
