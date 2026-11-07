@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cool Room Sensor Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#2a3340;
+    --tx:#e6edf3; --tx2:#8b96a5; --tx3:#5f6b7a;
+    --in:#58a6ff; --out:#ff9f40; --ok:#3fb950; --warn:#d29922; --err:#f85149;
+    --temp:#ff7b72; --hum:#58a6ff; --vel:#a5d6ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,-apple-system,sans-serif;
+       font-size:14px;line-height:1.5;padding:18px;min-height:100vh}
+  .wrap{max-width:1320px;margin:0 auto}
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+  h1{font-size:19px;font-weight:700;letter-spacing:-.2px}
+  h1 small{display:block;font-size:12px;font-weight:400;color:var(--tx2);letter-spacing:0}
+  .pill{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;
+        background:var(--panel2);border:1px solid var(--line);font-size:12.5px;font-weight:500;
+        font-variant-numeric:tabular-nums}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--tx3);flex:none}
+  .dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(63,185,80,.18)}
+  .dot.wait{background:var(--warn);animation:bl 1s infinite}
+  .dot.bad{background:var(--err)}
+  @keyframes bl{50%{opacity:.25}}
+  .spacer{flex:1}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+
+  .cfg{padding:14px;margin-bottom:16px}
+  .cfg-top{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+  .cfg-top b{font-size:13px;flex:none}
+  .cfg-top span.sum{color:var(--tx2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chev{margin-left:auto;color:var(--tx2);transition:transform .2s;flex:none}
+  .cfg.open .chev{transform:rotate(180deg)}
+  .cfg-body{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .cfg.open .cfg-body{display:block}
+  .grid-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:12px}
+  label{display:block;font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;
+        letter-spacing:.5px;margin-bottom:5px}
+  input,select{width:100%;padding:8px 10px;background:var(--bg);color:var(--tx);
+               border:1px solid var(--line);border-radius:7px;font-family:inherit;font-size:13px}
+  input:focus,select:focus{outline:none;border-color:var(--in)}
+  .hint{font-size:11.5px;color:var(--tx3);margin-top:5px;line-height:1.45}
+  code{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;background:var(--panel2);
+       padding:1px 5px;border-radius:4px}
+  .btns{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+  button{padding:8px 16px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);
+         color:var(--tx);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+  button:hover:not(:disabled){border-color:var(--tx3);background:#232b38}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.go{background:#1f6feb;border-color:#1f6feb;color:#fff}
+  button.go:hover:not(:disabled){background:#2a7aff;border-color:#2a7aff}
+
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:12px;margin-bottom:16px}
+  .m{padding:14px 15px;position:relative;overflow:hidden}
+  .m::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c)}
+  .m-h{display:flex;align-items:baseline;gap:7px;margin-bottom:7px}
+  .m-n{font-size:12px;font-weight:600;color:var(--tx2)}
+  .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.4px}
+  .tag.in{background:rgba(88,166,255,.14);color:var(--in)}
+  .tag.out{background:rgba(255,159,64,.14);color:var(--out)}
+  .m-v{font-size:30px;font-weight:700;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1.1}
+  .m-v .u{font-size:14px;font-weight:500;color:var(--tx2);margin-left:3px;letter-spacing:0}
+  .m-f{margin-top:8px;font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums}
+  .idle .m-v{color:var(--tx3)}
+
+  .deltas{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .d{padding:12px 14px}
+  .d-n{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+  .d-v{font-size:21px;font-weight:700;font-variant-numeric:tabular-nums}
+
+  .rangebar{padding:13px 14px;margin-bottom:12px}
+  .rrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;align-items:end}
+  .rnote{font-size:11.5px;color:var(--tx3);font-variant-numeric:tabular-nums;margin-top:11px;line-height:1.6}
+
+  .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(390px,1fr));gap:12px;margin-bottom:16px}
+  .ch{padding:14px}
+  .ch-h{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .ch-h b{font-size:13px}
+  .ch-h .unit{font-size:11px;color:var(--tx3);font-weight:500}
+  .lg{display:flex;gap:11px;margin-left:auto;font-size:11px;color:var(--tx2)}
+  .lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
+  .cv{height:200px;position:relative}
+
+  .log{padding:14px}
+  .log-h{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .log-h b{font-size:13px}
+  .log-b{max-height:180px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:7px;
+         padding:10px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px;line-height:1.75}
+  .log-b .t{color:var(--tx3);margin-right:8px}
+  .log-b .p{color:var(--tx)} .log-b .sys{color:var(--warn)}
+  .log-b .e{color:var(--err)} .log-b .g{color:var(--ok)}
+  .empty{color:var(--tx3);font-style:italic}
+  footer{margin-top:16px;font-size:11.5px;color:var(--tx3);text-align:center;line-height:1.8}
+  @media(max-width:600px){body{padding:12px}.m-v{font-size:25px}.cv{height:170px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Cool Room Sensor Monitor<small>Temperature, humidity and air velocity on the inlet and outlet side</small></h1>
+    <div class="spacer"></div>
+    <div class="pill"><span class="dot" id="dot"></span><span id="st">Starting…</span></div>
+    <div class="pill" id="last">—</div>
+  </header>
+
+  <div class="card cfg" id="cfg">
+    <div class="cfg-top" id="cfgTop">
+      <b>Settings</b><span class="sum" id="cfgSum"></span><span class="chev">▾</span>
+    </div>
+    <div class="cfg-body">
+      <div class="grid-f">
+        <div>
+          <label>API address</label>
+          <input id="api" value="">
+          <div class="hint">Leave empty to use the server this page came from</div>
+        </div>
+        <div>
+          <label>Refresh every</label>
+          <select id="poll">
+            <option value="0">Off</option>
+            <option value="10">10 seconds</option>
+            <option value="30" selected>30 seconds</option>
+            <option value="60">1 minute</option>
+            <option value="300">5 minutes</option>
+          </select>
+          <div class="hint">Matches the sensor's own 30-second interval</div>
+        </div>
+        <div>
+          <label>Max points per chart</label>
+          <select id="maxpts">
+            <option value="300">300</option>
+            <option value="600" selected>600</option>
+            <option value="1200">1200</option>
+            <option value="3000">3000</option>
+          </select>
+          <div class="hint">Higher is more detail, slower to draw</div>
+        </div>
+      </div>
+      <div class="btns">
+        <button class="go" id="bNow">Refresh now</button>
+        <button id="bCsv">Download CSV of this view</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="metrics" id="metrics"></div>
+  <div class="deltas" id="deltas"></div>
+
+  <div class="card rangebar">
+    <div class="rrow">
+      <div>
+        <label>Date</label>
+        <select id="selDate"></select>
+      </div>
+      <div id="wrapSpan">
+        <label>Time range</label>
+        <select id="selSpan"></select>
+      </div>
+      <div id="wrapFrom" style="display:none">
+        <label>From</label><select id="selFrom"></select>
+      </div>
+      <div id="wrapTo" style="display:none">
+        <label>To</label><select id="selTo"></select>
+      </div>
+    </div>
+    <div class="rnote" id="rnote">Loading…</div>
+  </div>
+
+  <div class="charts" id="charts"></div>
+
+  <div class="card log">
+    <div class="log-h"><b>Activity</b><div class="spacer"></div>
+      <span style="font-size:11.5px;color:var(--tx3)" id="rows">—</span></div>
+    <div class="log-b" id="logb"><span class="empty">Starting…</span></div>
+  </div>
+
+  <footer>
+    Readings collected by Node-RED and served read-only from CSV.<br>
+    T = temperature (°C) · H = humidity (%RH) · V = air velocity (m/s) · in = inlet · out = outlet
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var DEFS=[
+  {k:'T_in', n:'Temperature',  side:'in',  unit:'°C',  c:'var(--temp)', dec:1},
+  {k:'H_in', n:'Humidity',     side:'in',  unit:'%RH', c:'var(--hum)',  dec:1},
+  {k:'V_in', n:'Air velocity', side:'in',  unit:'m/s', c:'var(--vel)',  dec:2},
+  {k:'T_out',n:'Temperature',  side:'out', unit:'°C',  c:'var(--temp)', dec:1},
+  {k:'H_out',n:'Humidity',     side:'out', unit:'%RH', c:'var(--hum)',  dec:1},
+  {k:'V_out',n:'Air velocity', side:'out', unit:'m/s', c:'var(--vel)',  dec:2}
+];
+var KEYS=DEFS.map(function(d){return d.k;});
+var GROUPS=[
+  {id:'T',title:'Temperature', unit:'°C', a:'T_in',b:'T_out',dec:1},
+  {id:'H',title:'Humidity',    unit:'%RH',a:'H_in',b:'H_out',dec:1},
+  {id:'V',title:'Air velocity',unit:'m/s',a:'V_in',b:'V_out',dec:2}
+];
+var DELTAS=[
+  {id:'dT',n:'ΔT (out − in)',a:'T_out',b:'T_in',unit:'°C', dec:1},
+  {id:'dH',n:'ΔH (out − in)',a:'H_out',b:'H_in',unit:'%RH',dec:1},
+  {id:'dV',n:'ΔV (out − in)',a:'V_out',b:'V_in',unit:'m/s',dec:2}
+];
+var SPANS=[
+  {id:'15m',label:'Last 15 minutes',ms:15*60e3},
+  {id:'30m',label:'Last 30 minutes',ms:30*60e3},
+  {id:'1h', label:'Last 1 hour',    ms:3600e3},
+  {id:'3h', label:'Last 3 hours',   ms:3*3600e3},
+  {id:'6h', label:'Last 6 hours',   ms:6*3600e3},
+  {id:'12h',label:'Last 12 hours',  ms:12*3600e3},
+  {id:'24h',label:'Last 24 hours',  ms:24*3600e3},
+  {id:'7d', label:'Last 7 days',    ms:7*24*3600e3},
+  {id:'30d',label:'Last 30 days',   ms:30*24*3600e3},
+  {id:'all',label:'All history',    ms:null}
+];
+var LS='coolroom_view_v1';
+
+var S={
+  rows:[], cur:{}, span:'1h', date:'live', from:0, to:24,
+  days:[], charts:{}, busy:false, timer:null,
+  tickFmt:function(v){var d=new Date(v);return pad(d.getHours())+':'+pad(d.getMinutes());}
+};
+
+function $(id){return document.getElementById(id);}
+function el(t,c,h){var e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e;}
+function pad(n){return n<10?('0'+n):(''+n);}
+function fmt(v,d){return (v==null||isNaN(v))?'—':Number(v).toFixed(d);}
+function esc(s){return String(s).replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c];});}
+function apiBase(){ var v=$('api').value.trim(); return v.replace(/\/+$/,''); }
+
+function log(t,c){
+  var b=$('logb'); var e=b.querySelector('.empty'); if(e) b.innerHTML='';
+  b.appendChild(el('div',null,'<span class="t">'+new Date().toLocaleTimeString([],{hour12:false})+
+    '</span><span class="'+(c||'p')+'">'+esc(t)+'</span>'));
+  while(b.childNodes.length>200) b.removeChild(b.firstChild);
+  b.scrollTop=b.scrollHeight;
+}
+function setStatus(t,k){ $('st').textContent=t; $('dot').className='dot'+(k?(' '+k):''); }
+
+/* ---- cards ---- */
+DEFS.forEach(function(d){
+  var c=el('div','card m idle'); c.id='m-'+d.k; c.style.setProperty('--c',d.c);
+  c.innerHTML='<div class="m-h"><span class="m-n">'+d.n+'</span><span class="tag '+d.side+'">'+
+    (d.side==='in'?'IN · inlet':'OUT · outlet')+'</span></div>'+
+    '<div class="m-v" id="v-'+d.k+'">—<span class="u">'+d.unit+'</span></div>'+
+    '<div class="m-f" id="f-'+d.k+'">min — / max — / avg —</div>';
+  $('metrics').appendChild(c);
+});
+DELTAS.forEach(function(d){
+  var c=el('div','card d');
+  c.innerHTML='<div class="d-n">'+d.n+'</div><div class="d-v" id="dv-'+d.id+'">—</div>';
+  $('deltas').appendChild(c);
+});
+
+/* ---- charts ---- */
+GROUPS.forEach(function(g){
+  var card=el('div','card ch');
+  card.innerHTML='<div class="ch-h"><b>'+g.title+'</b><span class="unit">('+g.unit+')</span>'+
+    '<div class="lg"><span><i style="background:var(--in)"></i>Inlet</span>'+
+    '<span><i style="background:var(--out)"></i>Outlet</span></div></div>'+
+    '<div class="cv"><canvas id="c-'+g.id+'"></canvas></div>';
+  $('charts').appendChild(card);
+  var ds=function(l,col){return{label:l,data:[],borderColor:col,backgroundColor:col+'22',
+    borderWidth:2,pointRadius:0,tension:.3,fill:true,spanGaps:true};};
+  S.charts[g.id]=new Chart($('c-'+g.id),{
+    type:'line', data:{datasets:[ds('Inlet','#58a6ff'),ds('Outlet','#ff9f40')]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#1c2330',borderColor:'#2a3340',borderWidth:1,
+          titleColor:'#8b96a5',bodyColor:'#e6edf3',padding:9,
+          callbacks:{
+            title:function(i){return i.length?new Date(i[0].parsed.x).toLocaleString([],{hour12:false}):'';},
+            label:function(c){return c.dataset.label+': '+fmt(c.parsed.y,g.dec)+' '+g.unit;}}}},
+      scales:{
+        x:{type:'linear',bounds:'ticks',
+           title:{display:true,text:'Time',color:'#5f6b7a',font:{size:10.5,weight:'600'}},
+           grid:{color:'#1f2733'},
+           ticks:{color:'#5f6b7a',maxRotation:0,font:{size:10},maxTicksLimit:7,
+                  callback:function(v){return S.tickFmt(v);}}},
+        y:{title:{display:true,text:g.title+' ('+g.unit+')',color:'#5f6b7a',font:{size:10.5,weight:'600'}},
+           grid:{color:'#1f2733'},
+           ticks:{color:'#5f6b7a',font:{size:10},callback:function(v){return Number(v).toFixed(g.dec);}}}}}
+  });
+});
+
+/* ---- dropdowns ---- */
+SPANS.forEach(function(s){var o=el('option',null,s.label);o.value=s.id;$('selSpan').appendChild(o);});
+for(var h=0;h<=24;h++){
+  var a=el('option',null,pad(h)+':00');a.value=h;$('selFrom').appendChild(a);
+  var b=el('option',null,pad(h)+':00');b.value=h;$('selTo').appendChild(b);
+}
+function rebuildDates(){
+  var sel=$('selDate'), keep=S.date;
+  sel.innerHTML='';
+  var o=el('option',null,'Live (rolling window)');o.value='live';sel.appendChild(o);
+  var today=new Date(); var todayKey=today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+  S.days.slice().reverse().forEach(function(d){
+    var x=el('option',null,d+(d===todayKey?' (today)':''));x.value=d;sel.appendChild(x);
+  });
+  sel.value=(keep==='live'||S.days.indexOf(keep)>=0)?keep:'live';
+  S.date=sel.value; syncUI();
+}
+function syncUI(){
+  var live=(S.date==='live');
+  $('wrapSpan').style.display=live?'':'none';
+  $('wrapFrom').style.display=live?'none':'';
+  $('wrapTo').style.display=live?'none':'';
+}
+
+function windowBounds(){
+  if(S.date==='live'){
+    var sp=SPANS.filter(function(x){return x.id===S.span;})[0]||SPANS[2];
+    var end=Date.now();
+    if(sp.ms==null) return {from:0,to:end,desc:'all history'};
+    return {from:end-sp.ms,to:end,desc:sp.label.toLowerCase()};
+  }
+  var p=S.date.split('-');
+  var sd=new Date(+p[0],+p[1]-1,+p[2],S.from,0,0,0);
+  var ed=new Date(+p[0],+p[1]-1,+p[2],0,0,0,0); ed.setHours(ed.getHours()+S.to);
+  return {from:sd.getTime(),to:ed.getTime(),
+          desc:S.date+' '+pad(S.from)+':00–'+pad(S.to)+':00'};
+}
+function makeFmt(span){
+  if(span<=3*60e3)       return function(v){var d=new Date(v);return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());};
+  if(span<=6*3600e3)     return function(v){var d=new Date(v);return pad(d.getHours())+':'+pad(d.getMinutes());};
+  if(span<=3*24*3600e3)  return function(v){var d=new Date(v);return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes());};
+  return function(v){var d=new Date(v);return pad(d.getDate())+'/'+pad(d.getMonth()+1);};
+}
+
+/* ---- data ---- */
+async function getJSON(path){
+  var r = await fetch(apiBase()+path, {cache:'no-store'});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+async function loadDays(){
+  try{
+    var d = await getJSON('/api/days');
+    S.days = d.days || [];
+    rebuildDates();
+    log('Server has '+S.days.length+' day'+(S.days.length===1?'':'s')+' of data','sys');
+  }catch(e){ log('Could not list days: '+e.message,'e'); }
+}
+
+async function refresh(){
+  if(S.busy) return;
+  S.busy=true;
+  var w=windowBounds();
+  try{
+    setStatus('Loading…','wait');
+    var d = await getJSON('/api/readings?from='+w.from+'&to='+w.to+'&max='+$('maxpts').value);
+    S.rows = d.readings||[];
+    S.total = d.total_in_range||0;
+    var l = await getJSON('/api/latest');
+    S.cur = (l && l.reading) ? l.reading : {};
+    setStatus('Connected','on');
+    $('last').textContent = S.cur.t ? new Date(S.cur.t).toLocaleTimeString([],{hour12:false}) : '—';
+    render(w);
+  }catch(e){
+    setStatus('Cannot reach API','bad');
+    log('Request failed: '+e.message+' — check the API address','e');
+    $('rnote').textContent='Could not reach the API at '+(apiBase()||'this server')+'.';
+  }finally{ S.busy=false; }
+}
+
+function render(w){
+  var stats={};
+  KEYS.forEach(function(k){ stats[k]={min:null,max:null,sum:0,n:0}; });
+  S.rows.forEach(function(r){
+    KEYS.forEach(function(k){
+      var v=r[k]; if(v==null) return;
+      var s=stats[k];
+      s.min=(s.min==null)?v:Math.min(s.min,v);
+      s.max=(s.max==null)?v:Math.max(s.max,v);
+      s.sum+=v; s.n++;
+    });
+  });
+
+  DEFS.forEach(function(d){
+    var v=S.cur[d.k];
+    if(v!=null) $('m-'+d.k).classList.remove('idle'); else $('m-'+d.k).classList.add('idle');
+    $('v-'+d.k).innerHTML=fmt(v,d.dec)+'<span class="u">'+d.unit+'</span>';
+    var s=stats[d.k];
+    $('f-'+d.k).innerHTML='min '+fmt(s.min,d.dec)+' &nbsp;/&nbsp; max '+fmt(s.max,d.dec)+
+      ' &nbsp;/&nbsp; avg '+fmt(s.n?s.sum/s.n:null,d.dec);
+  });
+
+  DELTAS.forEach(function(d){
+    var a=S.cur[d.a],b=S.cur[d.b],node=$('dv-'+d.id);
+    if(a==null||b==null){node.textContent='—';node.style.color='var(--tx3)';return;}
+    var v=a-b;
+    node.textContent=(v>0?'+':'')+v.toFixed(d.dec)+' '+d.unit;
+    node.style.color=Math.abs(v)<1e-9?'var(--tx)':(v>0?'var(--out)':'var(--in)');
+  });
+
+  var lo=w.from, hi=w.to;
+  if(S.span==='all' && S.date==='live' && S.rows.length){
+    lo=S.rows[0].t; hi=Math.max(S.rows[S.rows.length-1].t, Date.now());
+  }
+  S.tickFmt=makeFmt(hi-lo);
+  GROUPS.forEach(function(g){
+    var ch=S.charts[g.id];
+    ch.options.scales.x.min=lo; ch.options.scales.x.max=hi;
+    ch.data.datasets[0].data=S.rows.map(function(r){return {x:r.t,y:r[g.a]};});
+    ch.data.datasets[1].data=S.rows.map(function(r){return {x:r.t,y:r[g.b]};});
+    ch.update('none');
+  });
+
+  var note='Axis spans '+w.desc+'. ';
+  if(!S.rows.length){ note+='No readings recorded in this window.'; }
+  else{
+    note+=S.total+' reading'+(S.total===1?'':'s')+' in it';
+    if(S.rows.length<S.total) note+=' (showing '+S.rows.length+' evenly spaced)';
+    note+=', from '+new Date(S.rows[0].t).toLocaleString([],{hour12:false})+
+          ' to '+new Date(S.rows[S.rows.length-1].t).toLocaleString([],{hour12:false})+'.';
+  }
+  $('rnote').textContent=note;
+  $('rows').textContent=S.rows.length+' points drawn';
+  $('cfgSum').textContent='· '+(apiBase()||'this server')+' · refresh '+$('poll').value+'s';
+}
+
+function csv(){
+  if(!S.rows.length){ log('Nothing to export in this view','e'); return; }
+  var head=['timestamp'].concat(DEFS.map(function(d){return d.k+' ('+d.unit+')';}));
+  var lines=[head.join(',')];
+  S.rows.forEach(function(r){
+    lines.push([new Date(r.t).toISOString()].concat(KEYS.map(function(k){
+      return r[k]==null?'':r[k];})).join(','));
+  });
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'}));
+  a.download='coolroom_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  log('Exported '+S.rows.length+' rows','g');
+}
+
+function schedule(){
+  clearInterval(S.timer);
+  var s=parseInt($('poll').value,10);
+  if(s>0) S.timer=setInterval(refresh,s*1000);
+}
+function save(){
+  try{ localStorage.setItem(LS,JSON.stringify({
+    api:$('api').value, poll:$('poll').value, maxpts:$('maxpts').value,
+    span:S.span, date:S.date, from:S.from, to:S.to})); }catch(e){}
+}
+function load(){
+  try{
+    var c=JSON.parse(localStorage.getItem(LS)||'{}');
+    if(c.api!=null)    $('api').value=c.api;
+    if(c.poll)         $('poll').value=c.poll;
+    if(c.maxpts)       $('maxpts').value=c.maxpts;
+    if(c.span)         S.span=c.span;
+    if(typeof c.from==='number') S.from=c.from;
+    if(typeof c.to==='number')   S.to=c.to;
+    if(c.date)         S.date=c.date;
+  }catch(e){}
+}
+
+$('cfgTop').onclick=function(){ $('cfg').classList.toggle('open'); };
+$('selSpan').onchange=function(){ S.span=this.value; save(); refresh(); };
+$('selDate').onchange=function(){ S.date=this.value; syncUI(); save(); refresh(); };
+$('selFrom').onchange=function(){
+  S.from=parseInt(this.value,10);
+  if(S.to<=S.from){ S.to=Math.min(24,S.from+1); $('selTo').value=S.to; }
+  save(); refresh();
+};
+$('selTo').onchange=function(){
+  S.to=parseInt(this.value,10);
+  if(S.to<=S.from){ S.from=Math.max(0,S.to-1); $('selFrom').value=S.from; }
+  save(); refresh();
+};
+$('api').onchange=function(){ save(); loadDays().then(refresh); };
+$('poll').onchange=function(){ save(); schedule(); };
+$('maxpts').onchange=function(){ save(); refresh(); };
+$('bNow').onclick=refresh;
+$('bCsv').onclick=csv;
+
+load();
+$('selSpan').value=S.span; $('selFrom').value=S.from; $('selTo').value=S.to;
+syncUI(); schedule();
+log('Starting up…','sys');
+loadDays().then(refresh);
+})();
+</script>
+</body>
+</html>
