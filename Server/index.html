@@ -193,12 +193,12 @@
       <span style="font-size:11.5px;color:var(--tx3)">Full resolution, not thinned</span></div>
     <div class="exp-row">
       <div>
-        <label>From</label>
-        <input type="datetime-local" id="exFrom">
+        <label>From &nbsp;<span style="text-transform:none;font-weight:400">YYYY-MM-DD HH:MM (24h)</span></label>
+        <input type="text" id="exFrom" placeholder="2026-11-07 00:00" spellcheck="false">
       </div>
       <div>
-        <label>To</label>
-        <input type="datetime-local" id="exTo">
+        <label>To &nbsp;<span style="text-transform:none;font-weight:400">YYYY-MM-DD HH:MM (24h)</span></label>
+        <input type="text" id="exTo" placeholder="2026-11-07 23:59" spellcheck="false">
       </div>
       <div>
         <label>File</label>
@@ -277,6 +277,13 @@ var S={
 function $(id){return document.getElementById(id);}
 function el(t,c,h){var e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e;}
 function pad(n){return n<10?('0'+n):(''+n);}
+/* fixed 24-hour formatting, never the browser's locale */
+function fmtDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function fmtTime(d,withSec){
+  return pad(d.getHours())+':'+pad(d.getMinutes())+(withSec===false?'':(':'+pad(d.getSeconds())));
+}
+function fmtDT(ms,withSec){ var d=new Date(ms); return fmtDate(d)+' '+fmtTime(d,withSec); }
+function fmtT(ms,withSec){ return fmtTime(new Date(ms),withSec); }
 function fmt(v,d){return (v==null||isNaN(v))?'—':Number(v).toFixed(d);}
 function esc(s){return String(s).replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c];});}
 function apiBase(){ var v=$('api').value.trim(); return v.replace(/\/+$/,''); }
@@ -294,8 +301,7 @@ function stampSpans(){
     var sc=S.charts[g.id].scales.x;
     var node=$('zs-'+g.id);
     if(!node||!sc) return;
-    node.textContent = new Date(sc.min).toLocaleString([],{hour12:false})+' \u2192 '+
-                       new Date(sc.max).toLocaleString([],{hour12:false})+
+    node.textContent = fmtDT(sc.min)+' \u2192 '+fmtDT(sc.max)+
                        '  ('+spanText(sc.max-sc.min)+')';
   });
 }
@@ -326,7 +332,7 @@ function resetZoom(){
 
 function log(t,c){
   var b=$('logb'); var e=b.querySelector('.empty'); if(e) b.innerHTML='';
-  b.appendChild(el('div',null,'<span class="t">'+new Date().toLocaleTimeString([],{hour12:false})+
+  b.appendChild(el('div',null,'<span class="t">'+fmtT(Date.now())+
     '</span><span class="'+(c||'p')+'">'+esc(t)+'</span>'));
   while(b.childNodes.length>200) b.removeChild(b.firstChild);
   b.scrollTop=b.scrollHeight;
@@ -381,7 +387,7 @@ GROUPS.forEach(function(g){
         tooltip:{backgroundColor:'#1c2330',borderColor:'#2a3340',borderWidth:1,
           titleColor:'#8b96a5',bodyColor:'#e6edf3',padding:9,
           callbacks:{
-            title:function(i){return i.length?new Date(i[0].parsed.x).toLocaleString([],{hour12:false}):'';},
+            title:function(i){return i.length?fmtDT(i[0].parsed.x):'';},
             label:function(c){return c.dataset.label+': '+fmt(c.parsed.y,g.dec)+' '+g.unit;}}}},
       scales:{
         x:{type:'linear',bounds:'ticks',
@@ -467,7 +473,7 @@ async function refresh(){
     var l = await getJSON('/api/latest');
     S.cur = (l && l.reading) ? l.reading : {};
     setStatus('Connected','on');
-    $('last').textContent = S.cur.t ? new Date(S.cur.t).toLocaleTimeString([],{hour12:false}) : '—';
+    $('last').textContent = S.cur.t ? fmtT(S.cur.t) : '—';
     render(w);
   }catch(e){
     setStatus('Cannot reach API','bad');
@@ -526,21 +532,25 @@ function render(w){
   else{
     note+=S.total+' reading'+(S.total===1?'':'s')+' in it';
     if(S.rows.length<S.total) note+=' (showing '+S.rows.length+' evenly spaced)';
-    note+=', from '+new Date(S.rows[0].t).toLocaleString([],{hour12:false})+
-          ' to '+new Date(S.rows[S.rows.length-1].t).toLocaleString([],{hour12:false})+'.';
+    note+=', from '+fmtDT(S.rows[0].t)+' to '+fmtDT(S.rows[S.rows.length-1].t)+'.';
   }
   $('rnote').textContent=note;
   $('rows').textContent=S.rows.length+' points drawn';
   $('cfgSum').textContent='· '+(apiBase()||'this server')+' · refresh '+$('poll').value+'s';
 }
 
-function pad2(n){return n<10?('0'+n):(''+n);}
-function toInput(ms){
-  var d=new Date(ms);
-  return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+
-         'T'+pad2(d.getHours())+':'+pad2(d.getMinutes());
+function pad2(n){return pad(n);}
+function toInput(ms){ return fmtDT(ms,false); }
+/* accepts "2026-11-07 14:30", "2026-11-07T14:30", "2026-11-07" and seconds too */
+function fromInput(v){
+  if(!v) return null;
+  var m=String(v).trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if(!m) return null;
+  var d=new Date(+m[1], +m[2]-1, +m[3], +(m[4]||0), +(m[5]||0), +(m[6]||0), 0);
+  if(isNaN(d.getTime())) return null;
+  if(+m[2]<1 || +m[2]>12 || +m[3]<1 || +m[3]>31 || +(m[4]||0)>23 || +(m[5]||0)>59) return null;
+  return d.getTime();
 }
-function fromInput(v){ var t=new Date(v).getTime(); return isNaN(t)?null:t; }
 
 function setQuick(which){
   var now=new Date(), f, t;
@@ -556,8 +566,8 @@ function setQuick(which){
   }
   $('exFrom').value=toInput(f);
   $('exTo').value=toInput(t);
-  $('exNote').textContent='Range set: '+new Date(f).toLocaleString([],{hour12:false})+
-    ' to '+new Date(t).toLocaleString([],{hour12:false})+'.';
+  $('exNote').textContent='Range set: '+fmtDT(f,false)+' to '+fmtDT(t,false)+
+    '  ('+spanText(t-f)+').';
 }
 
 /* fetch a range a day at a time so nothing is thinned by the server cap */
@@ -618,7 +628,11 @@ function exportRows(rows, kind){
 
 async function doExport(kind){
   var f=fromInput($('exFrom').value), t=fromInput($('exTo').value);
-  if(f==null||t==null){ $('exNote').textContent='Pick both a From and a To date first.'; return; }
+  if(f==null||t==null){
+    $('exNote').textContent='Could not read those dates. Use the format 2026-11-07 14:30 (24-hour), '+
+                            'or press one of the quick buttons above.';
+    return;
+  }
   if(f>t){ var x=f; f=t; t=x; }
   if(t-f > 93*86400e3){ $('exNote').textContent='That is more than 93 days. Export it in smaller pieces.'; return; }
   $('bXlsx').disabled=true; $('bCsv2').disabled=true;
