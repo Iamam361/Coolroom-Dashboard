@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#2a3340;
@@ -100,6 +100,42 @@
   .exp-note{font-size:11.5px;color:var(--tx3);margin-top:11px;line-height:1.6}
   .quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
   .quick button{padding:5px 11px;font-size:11.5px;font-weight:600}
+  /* 24-hour date + time picker */
+  .dtwrap{position:relative}
+  .dtpop{
+    position:absolute; z-index:60; top:calc(100% + 6px); left:0;
+    background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 14px 40px rgba(0,0,0,.55); padding:10px; display:none;
+  }
+  .dtpop.open{display:flex; gap:10px}
+  .dtcal{width:218px}
+  .dtnav{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+  .dtnav b{flex:1;text-align:center;font-size:12.5px}
+  .dtnav button{padding:3px 9px;font-size:12px;border-radius:6px;line-height:1.1}
+  .dtgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .dtgrid span{font-size:10px;color:var(--tx3);text-align:center;padding:3px 0;font-weight:600}
+  .dtgrid button{
+    padding:5px 0;font-size:11.5px;font-weight:500;border:none;border-radius:6px;
+    background:transparent;color:var(--tx);
+  }
+  .dtgrid button:hover{background:#2a3340}
+  .dtgrid button.out{color:var(--tx3)}
+  .dtgrid button.sel{background:#1f6feb;color:#fff}
+  .dtgrid button.today{outline:1px solid var(--out)}
+  .dtcols{display:flex;gap:7px}
+  .dtcol{width:52px;display:flex;flex-direction:column}
+  .dtcol .hd{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;
+             text-align:center;margin-bottom:4px;font-weight:600}
+  .dtlist{height:196px;overflow-y:auto;border:1px solid var(--line);border-radius:7px;background:var(--bg)}
+  .dtlist button{
+    display:block;width:100%;padding:5px 0;font-size:12px;border:none;border-radius:0;
+    background:transparent;color:var(--tx);font-variant-numeric:tabular-nums;
+  }
+  .dtlist button:hover{background:#2a3340}
+  .dtlist button.sel{background:#1f6feb;color:#fff}
+  .dtfoot{display:flex;gap:7px;align-items:center;margin-top:8px}
+  .dtfoot button{padding:5px 11px;font-size:11.5px}
+  .dtnow{font-size:11px;color:var(--tx3);margin-left:auto;font-variant-numeric:tabular-nums}
   .log{padding:14px}
   .log-h{display:flex;align-items:center;gap:10px;margin-bottom:10px}
   .log-h b{font-size:13px}
@@ -192,18 +228,21 @@
     <div class="log-h"><b>Export data</b><div class="spacer"></div>
       <span style="font-size:11.5px;color:var(--tx3)">Full resolution, not thinned</span></div>
     <div class="exp-row">
-      <div>
-        <label>From &nbsp;<span style="text-transform:none;font-weight:400">YYYY-MM-DD HH:MM (24h)</span></label>
-        <input type="text" id="exFrom" placeholder="2026-11-07 00:00" spellcheck="false">
+      <div class="dtwrap">
+        <label>From</label>
+        <input type="text" id="exFrom" placeholder="2026-11-07 00:00" spellcheck="false" autocomplete="off">
+        <div class="dtpop" id="pop-exFrom"></div>
       </div>
-      <div>
-        <label>To &nbsp;<span style="text-transform:none;font-weight:400">YYYY-MM-DD HH:MM (24h)</span></label>
-        <input type="text" id="exTo" placeholder="2026-11-07 23:59" spellcheck="false">
+      <div class="dtwrap">
+        <label>To</label>
+        <input type="text" id="exTo" placeholder="2026-11-07 23:59" spellcheck="false" autocomplete="off">
+        <div class="dtpop" id="pop-exTo"></div>
       </div>
       <div>
         <label>File</label>
         <div style="display:flex;gap:8px">
-          <button class="go" id="bXlsx" style="flex:1">Excel (.xlsx)</button>
+          <button class="go" id="bXlsx" style="flex:1">Excel + charts</button>
+          <button id="bXlsxPlain" style="flex:1">Excel only</button>
           <button id="bCsv2" style="flex:1">CSV</button>
         </div>
       </div>
@@ -301,6 +340,10 @@ function stampSpans(){
     var sc=S.charts[g.id].scales.x;
     var node=$('zs-'+g.id);
     if(!node||!sc) return;
+    if(!isFinite(sc.min)||!isFinite(sc.max)||sc.max-sc.min<=0||sc.min<946684800000){
+      node.textContent='';          // no sensible range yet
+      return;
+    }
     node.textContent = fmtDT(sc.min)+' \u2192 '+fmtDT(sc.max)+
                        '  ('+spanText(sc.max-sc.min)+')';
   });
@@ -552,6 +595,101 @@ function fromInput(v){
   return d.getTime();
 }
 
+/* ---------------- 24-hour date + time picker ---------------- */
+var PICK={open:null};
+
+function buildPicker(inputId){
+  var inp=$(inputId), pop=$('pop-'+inputId);
+  var view=new Date();                       // month being shown
+  var sel=null;                              // chosen Date
+
+  function readInput(){
+    var ms=fromInput(inp.value);
+    sel = ms==null ? null : new Date(ms);
+    view = sel ? new Date(sel.getFullYear(), sel.getMonth(), 1) : new Date();
+  }
+  function write(){
+    if(!sel) return;
+    inp.value=fmtDT(sel.getTime(), false);
+    inp.dispatchEvent(new Event('change'));
+  }
+  function render(){
+    var y=view.getFullYear(), m=view.getMonth();
+    var first=new Date(y,m,1), start=first.getDay();
+    var days=new Date(y,m+1,0).getDate(), prev=new Date(y,m,0).getDate();
+    var today=new Date(); var tk=fmtDate(today);
+    var MON=['January','February','March','April','May','June','July',
+             'August','September','October','November','December'];
+
+    var cal='<div class="dtcal"><div class="dtnav">'+
+      '<button data-nav="-1">\u2039</button><b>'+MON[m]+' '+y+'</b>'+
+      '<button data-nav="1">\u203a</button></div><div class="dtgrid">'+
+      ['Su','Mo','Tu','We','Th','Fr','Sa'].map(function(d){return '<span>'+d+'</span>';}).join('');
+    for(var i=start-1;i>=0;i--) cal+='<button class="out" disabled>'+(prev-i)+'</button>';
+    for(var d=1;d<=days;d++){
+      var key=y+'-'+pad(m+1)+'-'+pad(d);
+      var cls=[];
+      if(sel && fmtDate(sel)===key) cls.push('sel');
+      if(key===tk) cls.push('today');
+      cal+='<button class="'+cls.join(' ')+'" data-day="'+d+'">'+d+'</button>';
+    }
+    cal+='</div></div>';
+
+    var H=sel?sel.getHours():0, M=sel?sel.getMinutes():0;
+    var hs='', ms_='';
+    for(var h=0;h<24;h++) hs+='<button class="'+(h===H?'sel':'')+'" data-h="'+h+'">'+pad(h)+'</button>';
+    for(var mi=0;mi<60;mi++) ms_+='<button class="'+(mi===M?'sel':'')+'" data-m="'+mi+'">'+pad(mi)+'</button>';
+
+    pop.innerHTML = cal +
+      '<div><div class="dtcols">'+
+      '<div class="dtcol"><div class="hd">Hour</div><div class="dtlist" id="hl-'+inputId+'">'+hs+'</div></div>'+
+      '<div class="dtcol"><div class="hd">Min</div><div class="dtlist" id="ml-'+inputId+'">'+ms_+'</div></div>'+
+      '</div><div class="dtfoot">'+
+      '<button data-set="now">Now</button>'+
+      '<button data-set="start">00:00</button>'+
+      '<button data-set="end">23:59</button>'+
+      '<button class="go" data-set="done">Done</button>'+
+      '</div></div>';
+
+    // keep the chosen hour and minute in view
+    ['hl-','ml-'].forEach(function(pfx){
+      var list=$(pfx+inputId); var cur=list.querySelector('.sel');
+      if(cur) list.scrollTop = Math.max(0, cur.offsetTop - list.clientHeight/2 + 12);
+    });
+  }
+
+  function ensureSel(){ if(!sel) sel=new Date(); }
+
+  pop.addEventListener('click', function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if(b.dataset.nav){ view.setMonth(view.getMonth()+ (+b.dataset.nav)); render(); return; }
+    if(b.dataset.day){
+      ensureSel();
+      sel=new Date(view.getFullYear(), view.getMonth(), +b.dataset.day, sel.getHours(), sel.getMinutes(),0,0);
+      write(); render(); return;
+    }
+    if(b.dataset.h!=null){ ensureSel(); sel.setHours(+b.dataset.h); write(); render(); return; }
+    if(b.dataset.m!=null){ ensureSel(); sel.setMinutes(+b.dataset.m); write(); render(); return; }
+    if(b.dataset.set==='now'){ sel=new Date(); sel.setSeconds(0,0); view=new Date(sel.getFullYear(),sel.getMonth(),1); write(); render(); return; }
+    if(b.dataset.set==='start'){ ensureSel(); sel.setHours(0,0,0,0); write(); render(); return; }
+    if(b.dataset.set==='end'){ ensureSel(); sel.setHours(23,59,0,0); write(); render(); return; }
+    if(b.dataset.set==='done'){ close(); return; }
+  });
+
+  function open(){
+    if(PICK.open && PICK.open!==close) PICK.open();
+    readInput(); render(); pop.classList.add('open'); PICK.open=close;
+  }
+  function close(){ pop.classList.remove('open'); if(PICK.open===close) PICK.open=null; }
+
+  inp.addEventListener('focus', open);
+  inp.addEventListener('click', function(e){ e.stopPropagation(); open(); });
+  inp.addEventListener('input', function(){ if(fromInput(inp.value)!=null){ readInput(); render(); } });
+  inp.addEventListener('keydown', function(e){ if(e.key==='Escape'||e.key==='Enter'){ close(); inp.blur(); } });
+  return {close:close, refresh:function(){ readInput(); if(pop.classList.contains('open')) render(); }};
+}
+
 function setQuick(which){
   var now=new Date(), f, t;
   var midnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
@@ -587,6 +725,150 @@ async function fetchFull(from, to, onProgress){
   return out;
 }
 
+/* draw one chart off-screen on a white background and return a PNG data URL */
+function renderChartPNG(g, rows, from, to){
+  return new Promise(function(resolve){
+    var W=1000, H=300;
+    var cv=document.createElement('canvas');
+    cv.width=W; cv.height=H;                 /* logical size; dpr below sharpens it */
+    var holder=document.createElement('div');
+    holder.style.cssText='position:fixed;left:-20000px;top:0;width:'+W+'px;height:'+H+'px;background:#fff';
+    holder.appendChild(cv); document.body.appendChild(holder);
+
+    /* Chart.js clears the canvas on every draw, so paint the background from a plugin */
+    var whiteBg={
+      id:'whiteBg',
+      beforeDraw:function(c){
+        var x=c.ctx; x.save();
+        x.globalCompositeOperation='destination-over';
+        x.fillStyle='#ffffff'; x.fillRect(0,0,c.width,c.height);
+        x.restore();
+      }
+    };
+
+    var ch=new Chart(cv,{
+      type:'line',
+      plugins:[whiteBg],
+      data:{datasets:[
+        {label:'Inlet', data:rows.map(function(r){return {x:r.t,y:r[g.a]};}),
+         borderColor:'#1f6feb', backgroundColor:'rgba(31,111,235,0.10)',
+         borderWidth:2, pointRadius:0, tension:.3, fill:true, spanGaps:true},
+        {label:'Outlet',data:rows.map(function(r){return {x:r.t,y:r[g.b]};}),
+         borderColor:'#e8710a', backgroundColor:'rgba(232,113,10,0.10)',
+         borderWidth:2, pointRadius:0, tension:.3, fill:true, spanGaps:true}]},
+      options:{
+        responsive:false, animation:false, devicePixelRatio:2,
+        layout:{padding:6},
+        plugins:{
+          legend:{display:true,position:'top',align:'end',labels:{boxWidth:12,font:{size:11},color:'#333'}},
+          title:{display:true,text:g.title+' ('+g.unit+')',align:'start',
+                 font:{size:14,weight:'bold'},color:'#111',padding:{bottom:8}},
+          tooltip:{enabled:false}, zoom:{zoom:{wheel:{enabled:false}},pan:{enabled:false}}
+        },
+        scales:{
+          x:{type:'linear', min:from, max:to,
+             title:{display:true,text:'Time',font:{size:11},color:'#444'},
+             grid:{color:'#e6e6e6'},
+             ticks:{maxTicksLimit:9,font:{size:10},color:'#444',maxRotation:0,
+                    callback:function(v){ return makeFmt(to-from)(v); }}},
+          y:{title:{display:true,text:g.title+' ('+g.unit+')',font:{size:11},color:'#444'},
+             grid:{color:'#e6e6e6'},
+             ticks:{font:{size:10},color:'#444',callback:function(v){return Number(v).toFixed(g.dec);}}}
+        }
+      }
+    });
+    setTimeout(function(){
+      var url=cv.toDataURL('image/png');
+      ch.destroy(); holder.remove();
+      resolve(url);
+    }, 60);
+  });
+}
+
+function dataUrlToBase64(u){ return u.split(',')[1]; }
+
+/* ---------- Excel via ExcelJS, optionally with the charts as pictures ---------- */
+async function buildWorkbook(rows, from, to, withCharts){
+  var wb=new ExcelJS.Workbook();
+  wb.creator='Cool Room Dashboard';
+  wb.created=new Date();
+
+  var headFill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1F3864'}};
+  var headFont={bold:true,color:{argb:'FFFFFFFF'}};
+
+  if(withCharts){
+    var cs=wb.addWorksheet('Charts',{views:[{showGridLines:false}]});
+    cs.getCell('A1').value='Cool Room Sensor Report';
+    cs.getCell('A1').font={size:16,bold:true,color:{argb:'FF1F3864'}};
+    cs.getCell('A2').value=fmtDT(from,false)+'  to  '+fmtDT(to,false)+
+      '   \u00b7   '+rows.length+' readings   \u00b7   times in local time (24h)';
+    cs.getCell('A2').font={size:10,color:{argb:'FF595959'}};
+    cs.getColumn(1).width=12;
+
+    var row=4;
+    for(var i=0;i<GROUPS.length;i++){
+      var g=GROUPS[i];
+      var png=await renderChartPNG(g, rows, from, to);
+      var id=wb.addImage({base64:dataUrlToBase64(png), extension:'png'});
+      cs.addImage(id, {tl:{col:0.2, row:row-1}, ext:{width:900, height:270}});
+      row+=15;
+    }
+  }
+
+  var ws=wb.addWorksheet('Data',{views:[{state:'frozen', ySplit:1}]});
+  ws.columns=[
+    {header:'Date',        key:'d',  width:12},
+    {header:'Time',        key:'t',  width:10},
+    {header:'T_in (°C)',   key:'ti', width:11, style:{numFmt:'0.00'}},
+    {header:'H_in (%RH)',  key:'hi', width:12, style:{numFmt:'0.00'}},
+    {header:'V_in (m/s)',  key:'vi', width:11, style:{numFmt:'0.00'}},
+    {header:'T_out (°C)',  key:'to', width:12, style:{numFmt:'0.00'}},
+    {header:'H_out (%RH)', key:'ho', width:13, style:{numFmt:'0.00'}},
+    {header:'V_out (m/s)', key:'vo', width:12, style:{numFmt:'0.00'}},
+    {header:'dT (°C)',     key:'dt', width:10, style:{numFmt:'0.00'}},
+    {header:'dH (%RH)',    key:'dh', width:11, style:{numFmt:'0.00'}},
+    {header:'dV (m/s)',    key:'dv', width:10, style:{numFmt:'0.00'}}
+  ];
+  ws.getRow(1).font=headFont;
+  ws.getRow(1).fill=headFill;
+  ws.getRow(1).alignment={horizontal:'center',vertical:'middle',wrapText:true};
+  ws.autoFilter={from:{row:1,column:1}, to:{row:1,column:11}};
+
+  rows.forEach(function(r){
+    var d=new Date(r.t);
+    var sub=function(a,b){ return (r[a]==null||r[b]==null)?null:+(r[a]-r[b]).toFixed(3); };
+    ws.addRow({
+      d:fmtDate(d), t:fmtTime(d),
+      ti:r.T_in, hi:r.H_in, vi:r.V_in,
+      to:r.T_out, ho:r.H_out, vo:r.V_out,
+      dt:sub('T_out','T_in'), dh:sub('H_out','H_in'), dv:sub('V_out','V_in')
+    });
+  });
+
+  var sm=wb.addWorksheet('Summary',{views:[{showGridLines:false}]});
+  sm.getCell('A1').value='Summary';
+  sm.getCell('A1').font={size:14,bold:true,color:{argb:'FF1F3864'}};
+  sm.getCell('A2').value=fmtDT(from,false)+'  to  '+fmtDT(to,false);
+  sm.getCell('A2').font={size:10,color:{argb:'FF595959'}};
+  sm.addRow([]);
+  var hr=sm.addRow(['Measurement','Min','Max','Average','Unit']);
+  hr.font=headFont; hr.fill=headFill; hr.alignment={horizontal:'center'};
+  DEFS.forEach(function(def){
+    var vals=rows.map(function(r){return r[def.k];}).filter(function(v){return v!=null && !isNaN(v);});
+    if(!vals.length){ sm.addRow([def.n+' '+def.side, null,null,null, def.unit]); return; }
+    var mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals);
+    var av=vals.reduce(function(a,b){return a+b;},0)/vals.length;
+    sm.addRow([def.n+' ('+(def.side==='in'?'inlet':'outlet')+')',
+               +mn.toFixed(2), +mx.toFixed(2), +av.toFixed(2), def.unit]);
+  });
+  sm.getColumn(1).width=26;
+  [2,3,4].forEach(function(c){ sm.getColumn(c).width=10; sm.getColumn(c).numFmt='0.00';
+                               sm.getColumn(c).alignment={horizontal:'center'}; });
+  sm.getColumn(5).width=8;
+
+  return wb;
+}
+
 function exportRows(rows, kind){
   var header=['Date','Time','T_in (°C)','H_in (%RH)','V_in (m/s)',
               'T_out (°C)','H_out (%RH)','V_out (m/s)',
@@ -606,13 +888,7 @@ function exportRows(rows, kind){
   var stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
 
   if(kind==='xlsx'){
-    if(typeof XLSX==='undefined'){ log('Excel library did not load — use CSV instead','e'); return; }
-    var ws=XLSX.utils.aoa_to_sheet([header].concat(body));
-    ws['!cols']=[{wch:12},{wch:10},{wch:11},{wch:12},{wch:11},{wch:11},{wch:12},{wch:11},{wch:10},{wch:10},{wch:10}];
-    ws['!freeze']={xSplit:0,ySplit:1};
-    var wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Cool room');
-    XLSX.writeFile(wb,'coolroom_'+stamp+'.xlsx');
+    log('Use doExport instead','e');
   }else{
     var esc=function(v){ return v==null?'':String(v); };
     var lines=[header.join(',')].concat(body.map(function(r){return r.map(esc).join(',');}));
@@ -626,6 +902,13 @@ function exportRows(rows, kind){
   }
 }
 
+function saveBlob(blob, name){
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+}
+
 async function doExport(kind){
   var f=fromInput($('exFrom').value), t=fromInput($('exTo').value);
   if(f==null||t==null){
@@ -635,19 +918,39 @@ async function doExport(kind){
   }
   if(f>t){ var x=f; f=t; t=x; }
   if(t-f > 93*86400e3){ $('exNote').textContent='That is more than 93 days. Export it in smaller pieces.'; return; }
-  $('bXlsx').disabled=true; $('bCsv2').disabled=true;
+  $('bXlsx').disabled=true; $('bXlsxPlain').disabled=true; $('bCsv2').disabled=true;
   $('exNote').textContent='Fetching…';
   try{
     var rows=await fetchFull(f,t,function(n){ $('exNote').textContent='Fetched '+n+' readings…'; });
     if(!rows.length){ $('exNote').textContent='No readings in that range — nothing to export.'; return; }
-    exportRows(rows,kind);
-    $('exNote').textContent='Exported '+rows.length+' readings as '+(kind==='xlsx'?'Excel':'CSV')+'.';
+
+    var stamp=fmtDate(new Date())+'_'+fmtTime(new Date()).replace(/:/g,'-');
+    if(kind==='csv'){
+      exportRows(rows,'csv');
+      $('exNote').textContent='Exported '+rows.length+' readings as CSV.';
+    }else{
+      if(typeof ExcelJS==='undefined'){
+        $('exNote').textContent='The Excel library did not load. Use CSV, or check your internet connection.';
+        return;
+      }
+      var withCharts=(kind==='xlsx-charts');
+      $('exNote').textContent=withCharts
+        ? 'Drawing charts and building the workbook…'
+        : 'Building the workbook…';
+      var wb=await buildWorkbook(rows, f, t, withCharts);
+      var buf=await wb.xlsx.writeBuffer();
+      saveBlob(new Blob([buf],
+        {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),
+        'Cool_Room_'+stamp+'.xlsx');
+      $('exNote').textContent='Exported '+rows.length+' readings as Excel'+
+        (withCharts?' with charts':'')+'.';
+    }
     log('Exported '+rows.length+' readings ('+kind+')','g');
   }catch(e){
     $('exNote').textContent='Export failed: '+e.message;
     log('Export failed: '+e.message,'e');
   }finally{
-    $('bXlsx').disabled=false; $('bCsv2').disabled=false;
+    $('bXlsx').disabled=false; $('bXlsxPlain').disabled=false; $('bCsv2').disabled=false;
   }
 }
 
@@ -674,6 +977,8 @@ function load(){
   }catch(e){}
 }
 
+document.addEventListener('click', function(){ if(PICK.open) PICK.open(); });
+
 $('cfgTop').onclick=function(){ $('cfg').classList.toggle('open'); };
 $('selSpan').onchange=function(){ S.span=this.value; ZOOM.on=false; save(); refresh(); };
 $('selDate').onchange=function(){ S.date=this.value; syncUI(); ZOOM.on=false; save(); refresh(); };
@@ -692,7 +997,8 @@ $('poll').onchange=function(){ save(); schedule(); };
 $('maxpts').onchange=function(){ save(); refresh(); };
 $('bNow').onclick=refresh;
 $('bReset').onclick=resetZoom;
-$('bXlsx').onclick=function(){ doExport('xlsx'); };
+$('bXlsx').onclick=function(){ doExport('xlsx-charts'); };
+$('bXlsxPlain').onclick=function(){ doExport('xlsx'); };
 $('bCsv2').onclick=function(){ doExport('csv'); };
 GROUPS.forEach(function(g){ $('zr-'+g.id).onclick=resetZoom; });
 Array.prototype.forEach.call(document.querySelectorAll('.quick button'),function(b){
@@ -703,6 +1009,7 @@ load();
 $('selSpan').value=S.span; $('selFrom').value=S.from; $('selTo').value=S.to;
 syncUI(); schedule();
 setQuick('today');
+var PICKERS={exFrom:buildPicker('exFrom'), exTo:buildPicker('exTo')};
 log('Starting up…','sys');
 loadDays().then(refresh);
 })();
