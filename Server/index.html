@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#2a3340;
@@ -80,15 +83,23 @@
   .rrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;align-items:end}
   .rnote{font-size:11.5px;color:var(--tx3);font-variant-numeric:tabular-nums;margin-top:11px;line-height:1.6}
 
-  .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(390px,1fr));gap:12px;margin-bottom:16px}
+  .charts{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px}
   .ch{padding:14px}
   .ch-h{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
   .ch-h b{font-size:13px}
   .ch-h .unit{font-size:11px;color:var(--tx3);font-weight:500}
   .lg{display:flex;gap:11px;margin-left:auto;font-size:11px;color:var(--tx2)}
   .lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
-  .cv{height:200px;position:relative}
+  .cv{height:290px;position:relative}
 
+  .zspan{font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums}
+  .zbtn{padding:4px 10px;font-size:11px;font-weight:600;border-radius:6px}
+  .zhint{font-size:11px;color:var(--tx3);margin-top:7px;text-align:right}
+  .exp{padding:14px;margin-bottom:16px}
+  .exp-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;align-items:end}
+  .exp-note{font-size:11.5px;color:var(--tx3);margin-top:11px;line-height:1.6}
+  .quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+  .quick button{padding:5px 11px;font-size:11.5px;font-weight:600}
   .log{padding:14px}
   .log-h{display:flex;align-items:center;gap:10px;margin-bottom:10px}
   .log-h b{font-size:13px}
@@ -99,7 +110,7 @@
   .log-b .e{color:var(--err)} .log-b .g{color:var(--ok)}
   .empty{color:var(--tx3);font-style:italic}
   footer{margin-top:16px;font-size:11.5px;color:var(--tx3);text-align:center;line-height:1.8}
-  @media(max-width:600px){body{padding:12px}.m-v{font-size:25px}.cv{height:170px}}
+  @media(max-width:600px){body{padding:12px}.m-v{font-size:25px}.cv{height:230px}}
 </style>
 </head>
 <body>
@@ -147,7 +158,7 @@
       </div>
       <div class="btns">
         <button class="go" id="bNow">Refresh now</button>
-        <button id="bCsv">Download CSV of this view</button>
+        <button id="bReset">Reset all zoom</button>
       </div>
     </div>
   </div>
@@ -176,6 +187,37 @@
   </div>
 
   <div class="charts" id="charts"></div>
+
+  <div class="card exp">
+    <div class="log-h"><b>Export data</b><div class="spacer"></div>
+      <span style="font-size:11.5px;color:var(--tx3)">Full resolution, not thinned</span></div>
+    <div class="exp-row">
+      <div>
+        <label>From</label>
+        <input type="datetime-local" id="exFrom">
+      </div>
+      <div>
+        <label>To</label>
+        <input type="datetime-local" id="exTo">
+      </div>
+      <div>
+        <label>File</label>
+        <div style="display:flex;gap:8px">
+          <button class="go" id="bXlsx" style="flex:1">Excel (.xlsx)</button>
+          <button id="bCsv2" style="flex:1">CSV</button>
+        </div>
+      </div>
+    </div>
+    <div class="quick">
+      <button data-q="view">Match chart view</button>
+      <button data-q="today">Today</button>
+      <button data-q="yesterday">Yesterday</button>
+      <button data-q="7">Last 7 days</button>
+      <button data-q="30">Last 30 days</button>
+      <button data-q="all">Everything</button>
+    </div>
+    <div class="exp-note" id="exNote">Pick a range, then choose a file type.</div>
+  </div>
 
   <div class="card log">
     <div class="log-h"><b>Activity</b><div class="spacer"></div>
@@ -239,6 +281,49 @@ function fmt(v,d){return (v==null||isNaN(v))?'—':Number(v).toFixed(d);}
 function esc(s){return String(s).replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c];});}
 function apiBase(){ var v=$('api').value.trim(); return v.replace(/\/+$/,''); }
 
+var ZOOM={on:false, syncing:false};
+
+function spanText(ms){
+  if(ms<90e3)      return Math.round(ms/1000)+' s';
+  if(ms<90*60e3)   return (ms/60e3).toFixed(ms<10*60e3?1:0)+' min';
+  if(ms<48*3600e3) return (ms/3600e3).toFixed(1)+' h';
+  return (ms/86400e3).toFixed(1)+' days';
+}
+function stampSpans(){
+  GROUPS.forEach(function(g){
+    var sc=S.charts[g.id].scales.x;
+    var node=$('zs-'+g.id);
+    if(!node||!sc) return;
+    node.textContent = new Date(sc.min).toLocaleString([],{hour12:false})+' \u2192 '+
+                       new Date(sc.max).toLocaleString([],{hour12:false})+
+                       '  ('+spanText(sc.max-sc.min)+')';
+  });
+}
+/* one chart zoomed or panned: match the others so the three stay aligned */
+function afterZoom(id, chart){
+  if(ZOOM.syncing) return;
+  ZOOM.syncing=true;
+  ZOOM.on=true;
+  var lo=chart.scales.x.min, hi=chart.scales.x.max;
+  GROUPS.forEach(function(g){
+    if(g.id===id) return;
+    var c=S.charts[g.id];
+    c.options.scales.x.min=lo; c.options.scales.x.max=hi;
+    c.update('none');
+  });
+  S.tickFmt=makeFmt(hi-lo);
+  GROUPS.forEach(function(g){ S.charts[g.id].update('none'); });
+  stampSpans();
+  ZOOM.syncing=false;
+}
+function resetZoom(){
+  ZOOM.on=false;
+  GROUPS.forEach(function(g){
+    try{ S.charts[g.id].resetZoom('none'); }catch(e){}
+  });
+  refresh();
+}
+
 function log(t,c){
   var b=$('logb'); var e=b.querySelector('.empty'); if(e) b.innerHTML='';
   b.appendChild(el('div',null,'<span class="t">'+new Date().toLocaleTimeString([],{hour12:false})+
@@ -267,9 +352,12 @@ DELTAS.forEach(function(d){
 GROUPS.forEach(function(g){
   var card=el('div','card ch');
   card.innerHTML='<div class="ch-h"><b>'+g.title+'</b><span class="unit">('+g.unit+')</span>'+
+    '<span class="zspan" id="zs-'+g.id+'"></span>'+
     '<div class="lg"><span><i style="background:var(--in)"></i>Inlet</span>'+
-    '<span><i style="background:var(--out)"></i>Outlet</span></div></div>'+
-    '<div class="cv"><canvas id="c-'+g.id+'"></canvas></div>';
+    '<span><i style="background:var(--out)"></i>Outlet</span>'+
+    '<button class="zbtn" id="zr-'+g.id+'">Reset zoom</button></div></div>'+
+    '<div class="cv"><canvas id="c-'+g.id+'"></canvas></div>'+
+    '<div class="zhint">Scroll to zoom · drag to pan · Shift+drag to box-zoom · pinch on touch</div>';
   $('charts').appendChild(card);
   var ds=function(l,col){return{label:l,data:[],borderColor:col,backgroundColor:col+'22',
     borderWidth:2,pointRadius:0,tension:.3,fill:true,spanGaps:true};};
@@ -278,6 +366,18 @@ GROUPS.forEach(function(g){
     options:{responsive:true,maintainAspectRatio:false,animation:false,
       interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},
+        zoom:{
+          limits:{x:{minRange:30000}},
+          pan:{enabled:true,mode:'x',onPanComplete:function(c){afterZoom(g.id,c.chart);}},
+          zoom:{
+            wheel:{enabled:true,speed:0.12},
+            pinch:{enabled:true},
+            drag:{enabled:true,modifierKey:'shift',
+                  backgroundColor:'rgba(88,166,255,0.15)',borderColor:'#58a6ff',borderWidth:1},
+            mode:'x',
+            onZoomComplete:function(c){afterZoom(g.id,c.chart);}
+          }
+        },
         tooltip:{backgroundColor:'#1c2330',borderColor:'#2a3340',borderWidth:1,
           titleColor:'#8b96a5',bodyColor:'#e6edf3',padding:9,
           callbacks:{
@@ -410,14 +510,16 @@ function render(w){
   if(S.span==='all' && S.date==='live' && S.rows.length){
     lo=S.rows[0].t; hi=Math.max(S.rows[S.rows.length-1].t, Date.now());
   }
-  S.tickFmt=makeFmt(hi-lo);
+  if(!ZOOM.on) S.tickFmt=makeFmt(hi-lo);
   GROUPS.forEach(function(g){
     var ch=S.charts[g.id];
-    ch.options.scales.x.min=lo; ch.options.scales.x.max=hi;
+    /* while the user is zoomed in, leave their axis alone and only refresh the data */
+    if(!ZOOM.on){ ch.options.scales.x.min=lo; ch.options.scales.x.max=hi; }
     ch.data.datasets[0].data=S.rows.map(function(r){return {x:r.t,y:r[g.a]};});
     ch.data.datasets[1].data=S.rows.map(function(r){return {x:r.t,y:r[g.b]};});
     ch.update('none');
   });
+  stampSpans();
 
   var note='Axis spans '+w.desc+'. ';
   if(!S.rows.length){ note+='No readings recorded in this window.'; }
@@ -432,20 +534,107 @@ function render(w){
   $('cfgSum').textContent='· '+(apiBase()||'this server')+' · refresh '+$('poll').value+'s';
 }
 
-function csv(){
-  if(!S.rows.length){ log('Nothing to export in this view','e'); return; }
-  var head=['timestamp'].concat(DEFS.map(function(d){return d.k+' ('+d.unit+')';}));
-  var lines=[head.join(',')];
-  S.rows.forEach(function(r){
-    lines.push([new Date(r.t).toISOString()].concat(KEYS.map(function(k){
-      return r[k]==null?'':r[k];})).join(','));
+function pad2(n){return n<10?('0'+n):(''+n);}
+function toInput(ms){
+  var d=new Date(ms);
+  return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+
+         'T'+pad2(d.getHours())+':'+pad2(d.getMinutes());
+}
+function fromInput(v){ var t=new Date(v).getTime(); return isNaN(t)?null:t; }
+
+function setQuick(which){
+  var now=new Date(), f, t;
+  var midnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  if(which==='view'){ var w=windowBounds(); f=w.from; t=w.to; }
+  else if(which==='today'){ f=midnight; t=now.getTime(); }
+  else if(which==='yesterday'){ f=midnight-86400e3; t=midnight-1; }
+  else if(which==='7'){ f=now.getTime()-7*86400e3; t=now.getTime(); }
+  else if(which==='30'){ f=now.getTime()-30*86400e3; t=now.getTime(); }
+  else if(which==='all'){
+    f = S.days.length ? new Date(S.days[0]+'T00:00:00').getTime() : midnight;
+    t = now.getTime();
+  }
+  $('exFrom').value=toInput(f);
+  $('exTo').value=toInput(t);
+  $('exNote').textContent='Range set: '+new Date(f).toLocaleString([],{hour12:false})+
+    ' to '+new Date(t).toLocaleString([],{hour12:false})+'.';
+}
+
+/* fetch a range a day at a time so nothing is thinned by the server cap */
+async function fetchFull(from, to, onProgress){
+  var out=[], cur=from, guard=0;
+  while(cur<=to && guard<400){
+    guard++;
+    var next=Math.min(cur+86400e3, to);
+    var d=await getJSON('/api/readings?from='+cur+'&to='+next+'&max=20000');
+    var got=d.readings||[];
+    if(out.length && got.length && got[0].t===out[out.length-1].t) got.shift();
+    out=out.concat(got);
+    if(onProgress) onProgress(out.length);
+    if(next>=to) break;
+    cur=next+1;
+  }
+  return out;
+}
+
+function exportRows(rows, kind){
+  var header=['Date','Time','T_in (°C)','H_in (%RH)','V_in (m/s)',
+              'T_out (°C)','H_out (%RH)','V_out (m/s)',
+              'dT (°C)','dH (%RH)','dV (m/s)'];
+  var body=rows.map(function(r){
+    var d=new Date(r.t);
+    var num=function(v){return (v==null||isNaN(v))?null:v;};
+    var diff=function(a,b){return (r[a]==null||r[b]==null)?null:+(r[a]-r[b]).toFixed(3);};
+    return [
+      d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()),
+      pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds()),
+      num(r.T_in), num(r.H_in), num(r.V_in),
+      num(r.T_out), num(r.H_out), num(r.V_out),
+      diff('T_out','T_in'), diff('H_out','H_in'), diff('V_out','V_in')
+    ];
   });
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'}));
-  a.download='coolroom_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(a.href);
-  log('Exported '+S.rows.length+' rows','g');
+  var stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+
+  if(kind==='xlsx'){
+    if(typeof XLSX==='undefined'){ log('Excel library did not load — use CSV instead','e'); return; }
+    var ws=XLSX.utils.aoa_to_sheet([header].concat(body));
+    ws['!cols']=[{wch:12},{wch:10},{wch:11},{wch:12},{wch:11},{wch:11},{wch:12},{wch:11},{wch:10},{wch:10},{wch:10}];
+    ws['!freeze']={xSplit:0,ySplit:1};
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Cool room');
+    XLSX.writeFile(wb,'coolroom_'+stamp+'.xlsx');
+  }else{
+    var esc=function(v){ return v==null?'':String(v); };
+    var lines=[header.join(',')].concat(body.map(function(r){return r.map(esc).join(',');}));
+    // BOM so Excel opens UTF-8 correctly
+    var blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='coolroom_'+stamp+'.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+}
+
+async function doExport(kind){
+  var f=fromInput($('exFrom').value), t=fromInput($('exTo').value);
+  if(f==null||t==null){ $('exNote').textContent='Pick both a From and a To date first.'; return; }
+  if(f>t){ var x=f; f=t; t=x; }
+  if(t-f > 93*86400e3){ $('exNote').textContent='That is more than 93 days. Export it in smaller pieces.'; return; }
+  $('bXlsx').disabled=true; $('bCsv2').disabled=true;
+  $('exNote').textContent='Fetching…';
+  try{
+    var rows=await fetchFull(f,t,function(n){ $('exNote').textContent='Fetched '+n+' readings…'; });
+    if(!rows.length){ $('exNote').textContent='No readings in that range — nothing to export.'; return; }
+    exportRows(rows,kind);
+    $('exNote').textContent='Exported '+rows.length+' readings as '+(kind==='xlsx'?'Excel':'CSV')+'.';
+    log('Exported '+rows.length+' readings ('+kind+')','g');
+  }catch(e){
+    $('exNote').textContent='Export failed: '+e.message;
+    log('Export failed: '+e.message,'e');
+  }finally{
+    $('bXlsx').disabled=false; $('bCsv2').disabled=false;
+  }
 }
 
 function schedule(){
@@ -472,8 +661,8 @@ function load(){
 }
 
 $('cfgTop').onclick=function(){ $('cfg').classList.toggle('open'); };
-$('selSpan').onchange=function(){ S.span=this.value; save(); refresh(); };
-$('selDate').onchange=function(){ S.date=this.value; syncUI(); save(); refresh(); };
+$('selSpan').onchange=function(){ S.span=this.value; ZOOM.on=false; save(); refresh(); };
+$('selDate').onchange=function(){ S.date=this.value; syncUI(); ZOOM.on=false; save(); refresh(); };
 $('selFrom').onchange=function(){
   S.from=parseInt(this.value,10);
   if(S.to<=S.from){ S.to=Math.min(24,S.from+1); $('selTo').value=S.to; }
@@ -488,11 +677,18 @@ $('api').onchange=function(){ save(); loadDays().then(refresh); };
 $('poll').onchange=function(){ save(); schedule(); };
 $('maxpts').onchange=function(){ save(); refresh(); };
 $('bNow').onclick=refresh;
-$('bCsv').onclick=csv;
+$('bReset').onclick=resetZoom;
+$('bXlsx').onclick=function(){ doExport('xlsx'); };
+$('bCsv2').onclick=function(){ doExport('csv'); };
+GROUPS.forEach(function(g){ $('zr-'+g.id).onclick=resetZoom; });
+Array.prototype.forEach.call(document.querySelectorAll('.quick button'),function(b){
+  b.onclick=function(){ setQuick(b.dataset.q); };
+});
 
 load();
 $('selSpan').value=S.span; $('selFrom').value=S.from; $('selTo').value=S.to;
 syncUI(); schedule();
+setQuick('today');
 log('Starting up…','sys');
 loadDays().then(refresh);
 })();
