@@ -1,0 +1,37 @@
+[Unit]
+Description=Cool room sensor dashboard (read-only viewer over Node-RED CSV files)
+Documentation=https://github.com/Iamam361/Coolroom-Dashboard
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=120
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/coolroom_web
+ExecStart=/usr/bin/python3 /home/ubuntu/coolroom_web/coolroom_api.py
+
+Environment=COOLROOM_DATA=/var/snap/node-red/common/coolroom
+Environment=COOLROOM_PORT=8080
+Environment=COOLROOM_TZ=7
+Environment=PYTHONUNBUFFERED=1
+
+# restart on crash, but give up if it is failing in a tight loop
+Restart=always
+RestartSec=5
+# the OS itself forbids this service from writing anywhere at all,
+# so it cannot touch Node-RED's files even if the code were wrong
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryMax=192M
+
+[Install]
+WantedBy=multi-user.target
