@@ -242,6 +242,11 @@ code{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:calc(11.5px*va
 .fontb .fname{font-size:calc(11.5px*var(--fsk));font-weight:700;color:var(--tx2);
   margin-top:9px;text-transform:uppercase;letter-spacing:.4px}
 .fontb.on .fname{color:var(--accent)}
+.lprev{flex:none;width:46px;display:flex;align-items:center}
+.lsw{display:block;width:46px;height:3px;border-radius:2px}
+.lg .lsw{width:21px;height:2.5px;margin-right:7px}
+.lsel{width:132px!important;flex:none}
+@media(max-width:620px){ .lprev{display:none} .lsel{width:112px!important} }
 .optrow{display:grid;grid-template-columns:1fr 1fr;gap:17px}
 .optrow .opt{min-width:0}
 .optrow .note{margin-top:6px}
@@ -773,7 +778,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
                 <div class="optrow">
                   <div class="opt"><label>Fill</label>
                     <div class="seg" id="chFill"><button data-v="0">Off</button><button class="on" data-v="1">On</button></div>
-                    <div class="note">Ignored for points-only charts.</div>
+                    <div class="note">Ignored for points-only charts, and for the Combined chart (its three scales would overlap).</div>
                   </div>
                   <div class="opt"><label>Fill strength <span class="vtag" id="chOpTag">13%</span></label>
                     <input type="range" id="chOp" min="0" max="60" step="1" value="13">
@@ -806,6 +811,16 @@ body.locked .shell,body.locked .mnav{display:none!important}
                   </div>
                 </div>
               </div>
+              <div class="card pad">
+                <div class="sect">Combined chart &mdash; the six lines</div>
+                <div class="note" style="margin:0 0 13px">Each sensor gets its own colour and line style. These apply only to the <b>Combined</b> view on the Detail page.</div>
+                <div id="seriesRows"></div>
+                <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">
+                  <button class="btn sm" id="csReset" type="button">Reset the six lines</button>
+                  <button class="btn sm" id="csDash" type="button">Make outlets dashed</button>
+                </div>
+              </div>
+
               <div class="card pad">
                 <div class="sect">Preview</div>
                 <div class="preview">
@@ -1499,14 +1514,18 @@ function setPick(hex,commit){
   $('slG').value=(n>>8)&255;  $('slGv').textContent=(n>>8)&255;
   $('slB').value=n&255;       $('slBv').textContent=n&255;
   if(CPK.tab==='spectrum') drawSat();
-  if(commit && CPK.key){ TSTATE[CPK.key]=hex; applyTheme(false); rebuildSoon(); }
+  if(commit && CPK.key){
+    if(CPK.cb) CPK.cb(hex);
+    else { TSTATE[CPK.key]=hex; applyTheme(false); rebuildSoon(); }
+  }
 }
-function openPicker(key,label,anchor){
+function openPicker(key,label,anchor,opts){
   if(!$('cpop')) buildPickerShell();
   CPK.key=key;
+  CPK.cb=(opts&&opts.onPick)||null;
   $('cpTitle').textContent=label;
   renderSwatches();
-  setPick(TH[key],false);
+  setPick((opts&&opts.value)||TH[key],false);
   var d=$('cpop'); d.classList.add('open');
   var r=anchor.getBoundingClientRect();
   var w=286, left=Math.min(window.innerWidth-w-12, Math.max(10, r.left-w+r.width));
@@ -1515,7 +1534,7 @@ function openPicker(key,label,anchor){
   d.style.left=left+'px'; d.style.top=top+'px';
   if(CPK.tab==='spectrum') drawSat();
 }
-function closePicker(){ var d=$('cpop'); if(d) d.classList.remove('open'); CPK.key=null; }
+function closePicker(){ var d=$('cpop'); if(d) d.classList.remove('open'); CPK.key=null; CPK.cb=null; }
 
 /* ================= saved colour sets ================= */
 function getSets(){
@@ -1675,14 +1694,14 @@ function comboOpts(){
     return c.dataset.label+': '+fmt(c.parsed.y,d)+' '+u;};
   delete o.scales.y;
   o.scales.yT={type:'linear',position:'left',beginAtZero:!!CH.zero,
-    title:{display:true,text:nw?'°C':'Temperature (°C)',color:TH['ic-temp'],font:titleFont()},
-    grid:{color:gridClr('y')},ticks:Object.assign(yTicks(1),{color:TH['ic-temp']})};
+    title:{display:true,text:nw?'°C':'Temperature (°C)',color:seriesOf('T_in').c,font:titleFont()},
+    grid:{color:gridClr('y')},ticks:Object.assign(yTicks(1),{color:seriesOf('T_in').c})};
   o.scales.yH={type:'linear',position:'right',beginAtZero:!!CH.zero,
-    title:{display:true,text:nw?'%RH':'Humidity (%RH)',color:TH['ic-hum'],font:titleFont()},
-    grid:{drawOnChartArea:false,color:gridClr('y')},ticks:Object.assign(yTicks(1),{color:TH['ic-hum']})};
+    title:{display:true,text:nw?'%RH':'Humidity (%RH)',color:seriesOf('H_in').c,font:titleFont()},
+    grid:{drawOnChartArea:false,color:gridClr('y')},ticks:Object.assign(yTicks(1),{color:seriesOf('H_in').c})};
   o.scales.yV={type:'linear',position:'right',beginAtZero:!!CH.zero,
-    title:{display:true,text:nw?'m/s':'Air velocity (m/s)',color:TH['ic-vel'],font:titleFont()},
-    grid:{drawOnChartArea:false,color:gridClr('y')},ticks:Object.assign(yTicks(2),{color:TH['ic-vel']})};
+    title:{display:true,text:nw?'m/s':'Air velocity (m/s)',color:seriesOf('V_in').c,font:titleFont()},
+    grid:{drawOnChartArea:false,color:gridClr('y')},ticks:Object.assign(yTicks(2),{color:seriesOf('V_in').c})};
   return o;
 }
 function ds(label,color,dashed,extra){
@@ -1723,18 +1742,17 @@ function buildCharts(){
     card.innerHTML=cardShell(g,chartHeight(true), !CH.legend ? '' :
       COMBO.map(function(c,i){
         return '<button type="button" data-series="'+i+'" title="Click to hide or show this line">'+
-          (c.dashed
-            ? '<i class="dash" style="border-top-color:var(--'+c.tok+')"></i>'
-            : '<i style="background:var(--'+c.tok+')"></i>')+
-          c.short+'</button>';
+          lineSwatch(c.k)+c.short+'</button>';
       }).join(''));
     host.appendChild(card);
     S.charts.combo=new Chart($('c-combo'),{
       type:chartKind(),
       data:{datasets:COMBO.map(function(c){
-        return ds(c.label,TH[c.tok],c.dashed,
+        var sc=seriesOf(c.k);
+        return ds(c.label,sc.c,false,
           {yAxisID:c.axis,unit:c.unit,dec:c.dec,short:c.short,fill:false,
-           backgroundColor:hexA(TH[c.tok],0.85)});
+           borderDash:styleDash(sc.s), borderWidth:CH.w,
+           backgroundColor:hexA(sc.c,0.85)});
       })},
       options:comboOpts()
     });
@@ -2326,7 +2344,7 @@ function save(){
     api:$('api').value, poll:$('poll').value, maxpts:$('maxpts').value,
     stale:$('staleAfter').value, stab:S.stab, meas:S.meas, cmp:S.cmp,
     span:S.span, date:S.date, from:S.from, to:S.to,
-    ch:CH, ty:TY})); }catch(e){}
+    ch:CH, ty:TY, cs:CS})); }catch(e){}
 }
 function load(){
   try{
@@ -2344,6 +2362,8 @@ function load(){
     if(typeof c.to==='number') S.to=c.to;
     if(c.ch) Object.keys(CH).forEach(function(k){ if(c.ch[k]!=null) CH[k]=c.ch[k]; });
     if(c.ty) Object.keys(TY).forEach(function(k){ if(c.ty[k]!=null) TY[k]=c.ty[k]; });
+    if(c.cs) Object.keys(CS).forEach(function(k){
+      if(c.cs[k]){ if(c.cs[k].c) CS[k].c=c.cs[k].c; if(c.cs[k].s) CS[k].s=c.cs[k].s; } });
   }catch(e){}
 }
 function schedule(){
@@ -2396,20 +2416,42 @@ Array.prototype.forEach.call(document.querySelectorAll('.quick button'),function
 window.addEventListener('resize',function(){ clearTimeout(S.rz);
   S.rz=setTimeout(resizeCharts,180); });
 
-
-/* ================================================================
-   Typography + chart appearance  (settings → Text & fonts / Charts)
-   ================================================================ */
-
 /* ---- combined-chart series definition ---- */
-var COMBO=[
-  {k:'T_in', label:'Temperature — inlet',  short:'Temp in', tok:'ic-temp', axis:'yT', unit:'°C', dec:1, dashed:false},
-  {k:'T_out',label:'Temperature — outlet', short:'Temp out', tok:'ic-temp', axis:'yT', unit:'°C', dec:1, dashed:true},
-  {k:'H_in', label:'Humidity — inlet',     short:'Hum in', tok:'ic-hum',  axis:'yH', unit:'%RH',     dec:1, dashed:false},
-  {k:'H_out',label:'Humidity — outlet',    short:'Hum out', tok:'ic-hum',  axis:'yH', unit:'%RH',     dec:1, dashed:true},
-  {k:'V_in', label:'Air velocity — inlet', short:'Vel in', tok:'ic-vel',  axis:'yV', unit:'m/s',     dec:2, dashed:false},
-  {k:'V_out',label:'Air velocity — outlet',short:'Vel out', tok:'ic-vel',  axis:'yV', unit:'m/s',     dec:2, dashed:true}
+/* Six solid lines, one colour each: no dashes, because six dashed lines
+   on three scales is unreadable. Colour and style are both adjustable. */
+var LINE_STYLES=[
+  {id:'solid',  name:'Solid',       dash:[]},
+  {id:'dashed', name:'Dashed',      dash:[7,4]},
+  {id:'dotted', name:'Dotted',      dash:[1.5,3.5]},
+  {id:'dashdot',name:'Dash-dot',    dash:[9,3.5,2,3.5]},
+  {id:'long',   name:'Long dash',   dash:[14,5]}
 ];
+function styleDash(id){
+  for(var i=0;i<LINE_STYLES.length;i++) if(LINE_STYLES[i].id===id) return LINE_STYLES[i].dash;
+  return [];
+}
+var COMBO=[
+  {k:'T_in', label:'Temperature — inlet',  short:'Temp in',  axis:'yT', unit:'°C', dec:1},
+  {k:'T_out',label:'Temperature — outlet', short:'Temp out', axis:'yT', unit:'°C', dec:1},
+  {k:'H_in', label:'Humidity — inlet',     short:'Hum in',   axis:'yH', unit:'%RH',     dec:1},
+  {k:'H_out',label:'Humidity — outlet',    short:'Hum out',  axis:'yH', unit:'%RH',     dec:1},
+  {k:'V_in', label:'Air velocity — inlet', short:'Vel in',   axis:'yV', unit:'m/s',     dec:2},
+  {k:'V_out',label:'Air velocity — outlet',short:'Vel out',  axis:'yV', unit:'m/s',     dec:2}
+];
+var CS_DEF={
+  T_in :{c:'#e04f2f', s:'solid'},
+  T_out:{c:'#e08700', s:'solid'},
+  H_in :{c:'#2563eb', s:'solid'},
+  H_out:{c:'#0891b2', s:'solid'},
+  V_in :{c:'#16a34a', s:'solid'},
+  V_out:{c:'#9333ea', s:'solid'}
+};
+var CS={};
+function resetSeries(){
+  CS={}; COMBO.forEach(function(c){ CS[c.k]={c:CS_DEF[c.k].c, s:CS_DEF[c.k].s}; });
+}
+resetSeries();
+function seriesOf(k){ return CS[k]||CS_DEF[k]; }
 
 /* ---- defaults ---- */
 var CH_DEF={type:'line',fill:true,op:13,smooth:true,w:2,pts:0,grid:'both',zero:false,h:'m',legend:true,fsk:1};
@@ -2550,6 +2592,75 @@ function drawChPrev(){
   });
 }
 
+/* ---- the six combined-chart lines ---- */
+function dashCss(id){
+  var d=styleDash(id);
+  return d.length ? 'repeating-linear-gradient(to right,CLR 0,CLR '+d[0]+'px,transparent '+d[0]+'px,transparent '+(d[0]+d[1])+'px)' : '';
+}
+function lineSwatch(k){
+  var cs=seriesOf(k), d=styleDash(cs.s);
+  if(!d.length) return '<span class="lsw" style="background:'+cs.c+'"></span>';
+  var g=dashCss(cs.s).replace(/CLR/g,cs.c);
+  return '<span class="lsw" style="background:'+g+'"></span>';
+}
+function buildSeriesRows(){
+  var host=$('seriesRows'); if(!host) return;
+  host.innerHTML='';
+  COMBO.forEach(function(c){
+    var cs=seriesOf(c.k);
+    var row=el('div','crow');
+    row.innerHTML='<div class="nm"><b>'+c.label+'</b><small>'+c.unit+'</small></div>'+
+      '<span class="lprev" id="lp-'+c.k+'">'+lineSwatch(c.k)+'</span>'+
+      '<button type="button" class="cbtn" id="sc-'+c.k+'" aria-label="Colour for '+c.label+'"></button>'+
+      '<select class="lsel" id="ss-'+c.k+'">'+
+        LINE_STYLES.map(function(x){
+          return '<option value="'+x.id+'"'+(x.id===cs.s?' selected':'')+'>'+x.name+'</option>';
+        }).join('')+'</select>';
+    host.appendChild(row);
+  });
+  COMBO.forEach(function(c){
+    var btn=$('sc-'+c.k), sel=$('ss-'+c.k);
+    btn.style.background=seriesOf(c.k).c;
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      openPicker('series:'+c.k, c.label, btn, {
+        value:seriesOf(c.k).c,
+        onPick:function(hex){
+          CS[c.k].c=hex; btn.style.background=hex;
+          $('lp-'+c.k).innerHTML=lineSwatch(c.k);
+          save(); rebuildSoon();
+        }
+      });
+    });
+    sel.onchange=function(){
+      CS[c.k].s=this.value;
+      $('lp-'+c.k).innerHTML=lineSwatch(c.k);
+      save(); rebuildSoon();
+    };
+  });
+}
+function syncSeriesUI(){
+  COMBO.forEach(function(c){
+    var btn=$('sc-'+c.k), sel=$('ss-'+c.k), pv=$('lp-'+c.k);
+    if(btn) btn.style.background=seriesOf(c.k).c;
+    if(sel) sel.value=seriesOf(c.k).s;
+    if(pv) pv.innerHTML=lineSwatch(c.k);
+  });
+}
+function wireSeries(){
+  buildSeriesRows();
+  var r=$('csReset');
+  if(r) r.onclick=function(){ resetSeries(); syncSeriesUI(); save(); rebuildSoon();
+    log('Combined chart lines reset','s'); };
+  var d=$('csDash');
+  if(d) d.onclick=function(){
+    ['T_out','H_out','V_out'].forEach(function(k){ CS[k].s='dashed'; });
+    ['T_in','H_in','V_in'].forEach(function(k){ CS[k].s='solid'; });
+    syncSeriesUI(); save(); rebuildSoon();
+    log('Outlet lines set to dashed','s');
+  };
+}
+
 /* ---- wiring ---- */
 function buildFontGrid(){
   var g=$('fontGrid'); if(!g) return;
@@ -2616,6 +2727,7 @@ function bootUI(){
   buildFontGrid();
   wireTypography();
   wireChartCfg();
+  wireSeries();
   applyType();
   applyChartCfg(false);
 }
