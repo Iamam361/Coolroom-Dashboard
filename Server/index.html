@@ -107,7 +107,17 @@ svg{display:block}
 .tile-top .nm{font-size:calc(12.5px*var(--fsk));font-weight:700;letter-spacing:-.1px}
 .delta{margin-left:auto;background:var(--tile-badge);color:var(--tile-badge-tx);border-radius:999px;padding:5px 11px;
   font-size:calc(11.5px*var(--fsk));font-weight:700;font-variant-numeric:tabular-nums}
-.vals{display:flex;align-items:flex-end;gap:18px;margin-bottom:4px}
+.vals{display:flex;align-items:flex-end;gap:18px;margin-bottom:4px;flex-wrap:wrap}
+/* three or more readings in one tile: smaller numbers, tighter gaps, and a
+   grid so they wrap instead of running off the edge */
+.vals.n3,.vals.n4{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px}
+.vals.n4{grid-template-columns:repeat(2,minmax(0,1fr))}
+.vals.n5,.vals.n6{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 10px}
+.vals.n3 .vv,.vals.n5 .vv,.vals.n6 .vv{font-size:calc(19px*var(--fsk)*var(--numk));letter-spacing:-.7px}
+.vals.n4 .vv{font-size:calc(23px*var(--fsk)*var(--numk));letter-spacing:-.9px}
+.vals.n3 .vv u,.vals.n4 .vv u,.vals.n5 .vv u,.vals.n6 .vv u{font-size:.62em}
+.vcol{min-width:0}
+.vcol .vv{overflow-wrap:anywhere}
 .vcol .vk{font-size:calc(10.5px*var(--fsk));font-weight:700;text-transform:uppercase;letter-spacing:.6px;
   color:var(--tile-tx2);margin-bottom:1px}
 .vcol .vv{font-size:calc(31px*var(--fsk)*var(--numk));font-weight:800;letter-spacing:-1.4px;line-height:1;font-variant-numeric:tabular-nums}
@@ -189,6 +199,66 @@ code{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:calc(11.5px*va
 .ch-h.gas3 .cic{background:var(--t-hum);color:#2563eb}  .ch-h.gas4 .cic{background:var(--t-hum);color:#0891b2}
 .ch-h.gas5 .cic{background:var(--t-vel);color:#16a34a}  .ch-h.gas6 .cic{background:var(--t-vel);color:#9333ea}
 .chip.alt{margin-left:auto}
+/* ---- alarms ---- */
+.alstat{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:11px}
+.alcard{border:1px solid var(--line);border-radius:var(--r-ctl);padding:12px 13px;background:var(--panel2)}
+.alcard .top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.alcard .top i{width:9px;height:9px;border-radius:50%;background:var(--ok);flex:none}
+.alcard .top b{font-size:calc(12.5px*var(--fsk));font-weight:700;flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alcard .top .st{font-size:calc(10.5px*var(--fsk));font-weight:800;letter-spacing:.5px;
+  text-transform:uppercase;color:var(--tx3)}
+.alcard .big{font-size:calc(24px*var(--fsk));font-weight:800;letter-spacing:-1px;
+  font-variant-numeric:tabular-nums;line-height:1}
+.alcard .big u{font-size:.5em;text-decoration:none;color:var(--tx3);margin-left:3px;font-weight:700}
+.alcard .lim{font-size:calc(10.5px*var(--fsk));color:var(--tx3);margin-top:6px;font-weight:600}
+.alcard.ok i{background:var(--ok)}
+.alcard.warn{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,var(--panel2))}
+.alcard.warn i{background:var(--warn)} .alcard.warn .st{color:var(--warn)}
+.alcard.err{border-color:var(--err);background:color-mix(in srgb,var(--err) 9%,var(--panel2))}
+.alcard.err i{background:var(--err)} .alcard.err .st{color:var(--err)}
+.alcard.idle{opacity:.6}
+.altable{display:flex;flex-direction:column;gap:7px}
+.alrow{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:var(--r-sm);
+  border:1px solid transparent}
+.alrow:hover{background:var(--hover)}
+.alrow.on{border-color:var(--line)}
+.alrow .nm{flex:1;min-width:0}
+.alrow .nm b{display:block;font-size:calc(12.5px*var(--fsk));font-weight:700;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alrow .nm small{font-size:calc(10.5px*var(--fsk));color:var(--tx3);font-weight:600}
+.alrow input[type=number]{width:94px;flex:none;padding:7px 9px;text-align:right}
+.alrow .ck{flex:none;width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.alrow .lab{font-size:calc(10.5px*var(--fsk));font-weight:700;color:var(--tx3);
+  text-transform:uppercase;letter-spacing:.4px}
+.raildot,.mdot{position:absolute;top:9px;right:11px;width:9px;height:9px;border-radius:50%;
+  background:var(--err);display:none;border:2px solid var(--panel)}
+.raildot.on,.mdot.on{display:block}
+.mnav button{position:relative}
+.rbtn{position:relative}
+@media(max-width:780px){
+  .alstat{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  /* let the name wrap rather than clipping it to "Carbo..." */
+  .alcard .top{flex-wrap:wrap;gap:5px 7px}
+  .alcard .top b{white-space:normal;overflow:visible;flex:1 0 calc(100% - 17px);line-height:1.25}
+  .alcard .top .st{flex:1 0 100%}
+  .alrow{flex-wrap:wrap}
+  .alrow .nm{flex:1 0 100%}
+  .alrow input[type=number]{width:78px}
+}
+.roomsel{display:flex;align-items:center;gap:8px}
+.roomsel label{font-size:calc(11px*var(--fsk));font-weight:700;color:var(--tx3);
+  text-transform:uppercase;letter-spacing:.5px;margin:0}
+.roomsel select{width:auto;min-width:168px;padding-top:8px;padding-bottom:8px}
+.statusrow{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+.statusrow:empty{display:none}
+.sbadge{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;
+  background:var(--panel);border:1px solid var(--line);font-size:calc(12px*var(--fsk));
+  font-weight:600;color:var(--tx2)}
+.sbadge b{color:var(--tx);font-weight:700}
+.sbadge i{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.sbadge.warn i{background:var(--warn)} .sbadge.err i{background:var(--err)}
+.sbadge.warn{border-color:var(--warn)} .sbadge.err{border-color:var(--err)}
 .ch-h b{font-size:calc(15px*var(--fsk));font-weight:700;letter-spacing:-.3px}
 .ch-h .u{font-size:calc(11.5px*var(--fsk));color:var(--tx3);font-weight:600}
 .zspan{font-size:calc(11px*var(--fsk));color:var(--tx3);font-variant-numeric:tabular-nums}
@@ -251,6 +321,10 @@ code{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:calc(11.5px*va
 .fontb .fname{font-size:calc(11.5px*var(--fsk));font-weight:700;color:var(--tx2);
   margin-top:9px;text-transform:uppercase;letter-spacing:.4px}
 .fontb.on .fname{color:var(--accent)}
+.crow .ck{flex:none;width:18px;height:18px;margin:0 2px 0 0;accent-color:var(--accent);cursor:pointer}
+.crow.off .nm b,.crow.off .nm small{opacity:.45}
+.crow .ax{flex:none;font-size:calc(10.5px*var(--fsk));font-weight:700;color:var(--tx3);
+  min-width:26px;text-align:center}
 .lprev{flex:none;width:46px;display:flex;align-items:center}
 .lsw{display:block;width:46px;height:3px;border-radius:2px}
 .lg .lsw{width:21px;height:2.5px;margin-right:7px}
@@ -423,6 +497,8 @@ body.locked .shell,body.locked .mnav{display:none!important}
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.2 12 3l9 7.2V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
   <symbol id="i-gas" viewBox="0 0 24 24"><circle cx="8" cy="9" r="2.1"/><circle cx="15.5" cy="6.5" r="1.5"/><circle cx="16" cy="13" r="2.6"/><circle cx="9.5" cy="16.5" r="1.7"/></symbol>
   <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2s4.5 4.2 4.5 8.2a4.5 4.5 0 0 1-9 0C7.5 8.4 9 6.6 9 6.6"/><path d="M12 22a6 6 0 0 0 6-6c0-1.6-.6-3-1.5-4.2"/><path d="M12 22a6 6 0 0 1-6-6c0-1.2.3-2.3.9-3.3"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 2 3 7l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></symbol>
   <symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></symbol>
   <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1 14h6M9 8h6M17 16h6"/></symbol>
@@ -466,6 +542,9 @@ body.locked .shell,body.locked .mnav{display:none!important}
       <svg class="ic"><use href="#i-home"/></svg><span class="tip">Overview</span></button>
     <button class="rbtn" data-go="detail" aria-label="Detail">
       <svg class="ic"><use href="#i-chart"/></svg><span class="tip">Detail</span></button>
+    <button class="rbtn" data-go="alarms" aria-label="Alarms">
+      <svg class="ic"><use href="#i-bell"/></svg><span class="tip">Alarms</span>
+      <span class="raildot" id="railAlarm"></span></button>
     <button class="rbtn" data-go="export" aria-label="Export">
       <svg class="ic"><use href="#i-down"/></svg><span class="tip">Export</span></button>
     <button class="rbtn" data-go="settings" aria-label="Settings">
@@ -490,12 +569,16 @@ body.locked .shell,body.locked .mnav{display:none!important}
             <p class="sub" id="ovSub">—</p>
           </div>
           <div class="right">
+            <div class="roomsel" id="roomSelWrap">
+              <label for="roomSel">Room</label>
+              <select id="roomSel"></select>
+            </div>
             <span class="pill"><span class="dot" id="dot2"></span><span id="conn2">—</span></span>
             <button class="btn sm wic" id="ovRefresh"><svg class="ic sm"><use href="#i-refresh"/></svg>Refresh</button>
           </div>
         </div>
 
-        <div class="chips" id="roomChips"></div>
+        <div class="statusrow" id="statusRow"></div>
 
         <div class="tiles" id="tileGrid"></div>
 
@@ -541,6 +624,59 @@ body.locked .shell,body.locked .mnav{display:none!important}
         <div class="card pad">
           <div class="sect">Statistics for this period</div>
           <table class="stats" id="statTable"></table>
+        </div>
+      </section>
+
+      <!-- ============ ALARMS ============ -->
+      <section class="view" id="v-alarms">
+        <div class="toprow">
+          <div>
+            <div class="h1"><span>Alarms</span><span id="alTitle">—</span></div>
+            <p class="sub">Limits are checked in this browser while the page is open. Nothing is sent to the server, and you will not be alerted while the page is closed.</p>
+          </div>
+          <div class="right">
+            <span class="pill" id="alPill">—</span>
+            <button class="btn sm" id="alTest" type="button">Test sound</button>
+          </div>
+        </div>
+
+        <div class="card pad" style="margin-bottom:16px">
+          <div class="sect">Status now</div>
+          <div class="alstat" id="alStatus"></div>
+          <div class="note" id="alNote" style="margin-top:12px"></div>
+        </div>
+
+        <div class="card pad" style="margin-bottom:16px">
+          <div class="sect">Limits</div>
+          <div class="note" style="margin:0 0 13px">
+            Set a low and a high limit for any channel. Leave a box empty to ignore that side.
+            <b>Stuck</b> catches a sensor that has frozen: if the value does not change at all for that many minutes, it is flagged — which is how a dead sensor usually looks, rather than going out of range.
+          </div>
+          <div class="altable" id="alRules"></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">
+            <button class="btn sm" id="alSuggest" type="button">Suggest from recent data</button>
+            <button class="btn sm" id="alClear" type="button">Clear all limits</button>
+          </div>
+        </div>
+
+        <div class="card pad" style="margin-bottom:16px">
+          <div class="sect">How you are told</div>
+          <div class="optrow">
+            <div class="opt"><label>While this page is open</label>
+              <div class="seg" id="alSound"><button class="on" data-v="0">Silent</button><button data-v="1">Beep on a new alarm</button></div>
+              <div class="note">A short tone the first time a channel goes into alarm. Repeats only if it recovers and trips again.</div>
+            </div>
+            <div class="opt"><label>Show bands on the charts</label>
+              <div class="seg" id="alBands"><button data-v="0">Off</button><button class="on" data-v="1">On</button></div>
+              <div class="note">Shades the area outside your limits on the Detail charts.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card pad">
+          <div class="sect">Breaches in the period shown on Detail</div>
+          <table class="stats" id="alBreach"></table>
+          <div class="note" style="margin-top:11px">Worked out from the readings currently loaded on the Detail page — change the time range there to look further back.</div>
         </div>
       </section>
 
@@ -852,10 +988,14 @@ body.locked .shell,body.locked .mnav{display:none!important}
               </div>
               <div class="card pad">
                 <div class="sect" id="seriesTitle">Combined chart lines</div>
-                <div class="note" style="margin:0 0 13px">Each line on the <b>Combined</b> view gets its own colour and style. Saved separately for each room.</div>
+                <div class="note" style="margin:0 0 13px">Tick the channels you want on the <b>Combined</b> view, and give each one a colour and line style. Vertical axes are grouped by unit automatically. Saved separately for each room.</div>
                 <div id="seriesRows"></div>
+                <div class="note" id="comboAxisNote" style="margin-top:12px"></div>
                 <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">
-                  <button class="btn sm" id="csReset" type="button">Reset these lines</button>
+                  <button class="btn sm" id="csAll" type="button">Tick all</button>
+                  <button class="btn sm" id="csNone" type="button">Untick all</button>
+                  <button class="btn sm" id="csDefault" type="button">Suggested set</button>
+                  <button class="btn sm" id="csReset" type="button">Reset colours</button>
                   <button class="btn sm" id="csDash" type="button">Dash alternate lines</button>
                 </div>
               </div>
@@ -955,6 +1095,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
 <nav class="mnav">
   <button class="on" data-go="overview"><svg class="ic sm"><use href="#i-home"/></svg>Overview</button>
   <button data-go="detail"><svg class="ic sm"><use href="#i-chart"/></svg>Detail</button>
+  <button data-go="alarms"><svg class="ic sm"><use href="#i-bell"/></svg>Alarms<span class="mdot" id="mnavAlarm"></span></button>
   <button data-go="export"><svg class="ic sm"><use href="#i-down"/></svg>Export</button>
   <button data-go="settings"><svg class="ic sm"><use href="#i-gear"/></svg>Settings</button>
 </nav>
@@ -1103,15 +1244,57 @@ function applyRoom(room){
             diag:!!g.diag, paired:!!g.paired, series:ser,
             a:ser[0]&&ser[0].k, b:ser[1]&&ser[1].k};
   });
-  var cb=room.combo||{series:[],axes:[]};
-  COMBO_AXES=(cb.axes||[]).map(function(a){
-    return {id:a.id, title:a.title, unit:a.unit, side:a.side||'right'};
+  ROOM_COMBO_DEFAULT=((room.combo||{}).series||[]).map(function(x){ return x.k; });
+  buildCombo();
+}
+
+/* Which channels appear on the combined chart. The room suggests a set; the
+   user can tick any channel. Axes are grouped by unit, never more than three
+   on screen at once. */
+var ROOM_COMBO_DEFAULT=[], COMBO_PICK={}, COMBO_EXTRA=[];
+var AXIS_MAX=3;
+function comboKeys(){
+  if(!ROOM) return [];
+  var pick=COMBO_PICK[ROOM.id];
+  var want = pick && pick.length ? pick : ROOM_COMBO_DEFAULT;
+  return want.filter(function(k){ return KEYS.indexOf(k)>=0; });
+}
+function shortFor(k){
+  if(ROOM && ROOM.combo){
+    var s=(ROOM.combo.series||[]).filter(function(x){return x.k===k;})[0];
+    if(s && s.short) return s.short;
+  }
+  var d=DEFS.filter(function(y){return y.k===k;})[0];
+  if(!d) return k;
+  return d.n.length>14 ? d.n.replace(/\s*\u2014\s*/,' ').slice(0,14) : d.n;
+}
+function buildCombo(){
+  var keys=comboKeys();
+  /* one axis per unit, in the order the units first appear */
+  var units=[], byUnit={};
+  keys.forEach(function(k){
+    var d=DEFS.filter(function(y){return y.k===k;})[0]; if(!d) return;
+    var u=d.unit||'';
+    if(units.indexOf(u)<0){ units.push(u); byUnit[u]=[]; }
+    byUnit[u].push(k);
   });
-  COMBO=(cb.series||[]).map(function(x){
-    var d=DEFS.filter(function(y){return y.k===x.k;})[0]||{};
-    return {k:x.k, label:x.label||d.n||x.k, short:x.short||x.label||x.k,
-            axis:x.axis||(COMBO_AXES[0]&&COMBO_AXES[0].id),
-            unit:d.unit||'', dec:(d.dec==null?2:d.dec)};
+  COMBO_EXTRA = units.slice(AXIS_MAX);
+  var shown = units.slice(0,AXIS_MAX);
+  COMBO_AXES = shown.map(function(u,i){
+    var ttl=(byUnit[u].length===1)
+      ? (DEFS.filter(function(y){return y.k===byUnit[u][0];})[0]||{}).n
+      : null;
+    return {id:'y'+(i+1), unit:u,
+            title:(ttl?ttl+(u?' ('+u+')':''):(u||'Value')),
+            side:(i===0?'left':'right')};
+  });
+  COMBO=[];
+  shown.forEach(function(u,i){
+    byUnit[u].forEach(function(k){
+      var d=DEFS.filter(function(y){return y.k===k;})[0]||{};
+      COMBO.push({k:k, label:d.n||k, short:shortFor(k),
+                  axis:'y'+(i+1), unit:d.unit||'', dec:(d.dec==null?2:d.dec)});
+    });
   });
 }
 function visibleGroups(){
@@ -1134,7 +1317,7 @@ var SPANS=[
   {id:'all',label:'All history',    ms:null}
 ];
 var LS='coolroom_v2';
-var PAGES=['overview','detail','export','settings'];
+var PAGES=['overview','detail','alarms','export','settings'];
 
 var S={
   page:'overview',
@@ -1937,8 +2120,10 @@ function buildCharts(){
     g.series.forEach(function(sr,i){
       sets.push(ds(sr.label+' earlier',serColor(i),true));
     });
+    var opts=chartOpts(g);
+    opts.plugins.alBands={bands:alBandsFor(g)};
     S.charts[g.id]=new Chart($('c-'+g.id),{
-      type:chartKind(), data:{datasets:sets}, options:chartOpts(g)
+      type:chartKind(), data:{datasets:sets}, options:opts, plugins:[alBandPlugin]
     });
   });
 }
@@ -2061,7 +2246,7 @@ function renderOverview(){
       return '<button class="tile '+g.cls+'" data-open="'+g.id+'">'+
         '<div class="tile-top"><span class="tile-ic"><svg class="ic"><use href="#'+g.icon+'"/></svg></span>'+
         '<span class="nm">'+g.title+'</span><span class="delta" id="dl-'+g.id+'">\u2014</span></div>'+
-        '<div class="vals">'+
+        '<div class="vals n'+Math.min(6,g.series.length)+'">'+
           g.series.map(function(sr,i){
             return '<div class="vcol"><div class="vk">'+sr.label+'</div>'+
                    '<div class="vv" id="vv-'+g.id+'-'+i+'">\u2014</div></div>';
@@ -2087,7 +2272,9 @@ function renderOverview(){
     });
     var dl=$('dl-'+g.id);
     if(dl){
-      if(g.series.length===2){
+      /* a difference is only meaningful between an inlet and its outlet,
+         not between two unrelated channels that share a unit */
+      if(g.paired && g.series.length===2){
         var va=S.cur[g.series[0].k], vb=S.cur[g.series[1].k];
         var d=(va==null||vb==null)?null:vb-va;
         dl.textContent = d==null?'\u2014':'\u0394 '+(d>0?'+':'')+fmt(d,g.dec);
@@ -2180,17 +2367,14 @@ async function loadRooms(){
   buildMeasChips();
 }
 function buildRoomChips(){
-  var host=$('roomChips'); if(!host) return;
-  if(ROOMS.length<2){ host.style.display='none'; return; }
-  host.style.display='';
-  host.innerHTML=ROOMS.map(function(r){
-    return '<button class="chip'+(r.id===ROOM.id?' on':'')+'" data-room="'+r.id+'">'+
-      '<span class="cic"><svg class="ic sm"><use href="#'+
-      (r.id==='coolroom'?'i-home':'i-gas')+'"/></svg></span>'+r.short+'</button>';
+  var wrap=$('roomSelWrap'), sel=$('roomSel');
+  if(!sel) return;
+  if(ROOMS.length<2){ if(wrap) wrap.style.display='none'; return; }
+  if(wrap) wrap.style.display='';
+  sel.innerHTML=ROOMS.map(function(r){
+    return '<option value="'+r.id+'"'+(r.id===ROOM.id?' selected':'')+'>'+r.name+'</option>';
   }).join('');
-  Array.prototype.forEach.call(host.children,function(b){
-    b.onclick=function(){ switchRoom(b.dataset.room); };
-  });
+  sel.onchange=function(){ switchRoom(this.value); };
 }
 function buildMeasChips(){
   var host=$('measChips'); if(!host) return;
@@ -2237,6 +2421,7 @@ async function switchRoom(id){
   var g=$('tileGrid'); if(g){ g.dataset.built=''; g.innerHTML=''; }
   buildRoomChips(); buildMeasChips(); buildCharts();
   bootSeries();                      /* the line settings belong to this room */
+  alBuildRules(); alRefresh();
   drawChPrevSoon();
   setTx('roomTx', ROOM.name);
   save();
@@ -2331,6 +2516,7 @@ async function renderDetail(w){
   }
   stampSpans();
   renderStats();
+  if(typeof alRefresh==='function') alRefresh();
 
   var note='Showing '+w.desc+'. ';
   if(!S.rows.length) note+='No readings recorded in this period.';
@@ -2715,7 +2901,8 @@ function save(){
     api:$('api').value, poll:$('poll').value, maxpts:$('maxpts').value,
     stale:$('staleAfter').value, stab:S.stab, meas:S.meas, cmp:S.cmp,
     span:S.span, date:S.date, from:S.from, to:S.to,
-    ch:CH, ty:TY, cs:CS, room:S.room, diag:S.diag,
+    ch:CH, ty:TY, cs:CS, room:S.room, diag:S.diag, pick:COMBO_PICK,
+    al:AL, alui:AL_UI,
     exEvery:exEveryStep(), exHow:exEveryHow()})); }catch(e){}
 }
 function load(){
@@ -2734,6 +2921,25 @@ function load(){
     if(typeof c.to==='number') S.to=c.to;
     if(c.ch) Object.keys(CH).forEach(function(k){ if(c.ch[k]!=null) CH[k]=c.ch[k]; });
     if(c.ty) Object.keys(TY).forEach(function(k){ if(c.ty[k]!=null) TY[k]=c.ty[k]; });
+    if(c.al && typeof c.al==='object') Object.keys(c.al).forEach(function(rid){
+      var src=c.al[rid];
+      if(!src||typeof src!=='object') return;
+      AL[rid]=AL[rid]||{};
+      Object.keys(src).forEach(function(k){
+        var r=src[k]; if(!r||typeof r!=='object') return;
+        AL[rid][k]={on:!!r.on,
+                    lo:(typeof r.lo==='number'?r.lo:null),
+                    hi:(typeof r.hi==='number'?r.hi:null),
+                    stuck:(typeof r.stuck==='number'?r.stuck:0)};
+      });
+    });
+    if(c.alui){
+      if(typeof c.alui.sound==='boolean') AL_UI.sound=c.alui.sound;
+      if(typeof c.alui.bands==='boolean') AL_UI.bands=c.alui.bands;
+    }
+    if(c.pick && typeof c.pick==='object') Object.keys(c.pick).forEach(function(rid){
+      if(Array.isArray(c.pick[rid])) COMBO_PICK[rid]=c.pick[rid].slice();
+    });
     if(c.room) S.room=c.room;
     if(typeof c.diag==='boolean') S.diag=c.diag;
     if(c.exEvery!=null && $('exEvery')) $('exEvery').value=String(c.exEvery);
@@ -2836,20 +3042,18 @@ function defaultSeries(k,i){ return {c:COMBO_PAL[i%COMBO_PAL.length], s:'solid'}
 function ensureSeries(){
   if(!ROOM) return;
   var r=CS[ROOM.id]=CS[ROOM.id]||{};
-  COMBO.forEach(function(c,i){
-    if(!r[c.k]) r[c.k]=defaultSeries(c.k,i);
-  });
+  DEFS.forEach(function(d,i){ if(!r[d.k]) r[d.k]=defaultSeries(d.k,i); });
 }
 function resetSeries(){
   if(!ROOM) return;
   CS[ROOM.id]={};
-  COMBO.forEach(function(c,i){ CS[ROOM.id][c.k]=defaultSeries(c.k,i); });
+  DEFS.forEach(function(d,i){ CS[ROOM.id][d.k]=defaultSeries(d.k,i); });
 }
 function seriesOf(k){
   if(!ROOM) return {c:COMBO_PAL[0], s:'solid'};
   ensureSeries();
   var i=0;
-  for(var j=0;j<COMBO.length;j++) if(COMBO[j].k===k){ i=j; break; }
+  for(var j=0;j<DEFS.length;j++) if(DEFS[j].k===k){ i=j; break; }
   return (CS[ROOM.id] && CS[ROOM.id][k]) || defaultSeries(k,i);
 }
 
@@ -3012,46 +3216,82 @@ function lineSwatch(k){
 function buildSeriesRows(){
   var host=$('seriesRows'); if(!host) return;
   host.innerHTML='';
-  if(!ROOM || !COMBO.length){
-    host.innerHTML='<div class="note">This room has no combined chart.</div>';
+  if(!ROOM || !DEFS.length){
+    host.innerHTML='<div class="note">No channels to show yet.</div>';
     return;
   }
   ensureSeries();
-  COMBO.forEach(function(c){
-    var cs=seriesOf(c.k);
-    var row=el('div','crow');
-    row.innerHTML='<div class="nm"><b>'+c.label+'</b><small>'+(c.unit||'')+'</small></div>'+
-      '<span class="lprev" id="lp-'+c.k+'">'+lineSwatch(c.k)+'</span>'+
-      '<button type="button" class="cbtn" id="sc-'+c.k+'" aria-label="Colour for '+c.label+'"></button>'+
-      '<select class="lsel" id="ss-'+c.k+'">'+
+  var on=comboKeys();
+  DEFS.forEach(function(d){
+    var picked=on.indexOf(d.k)>=0;
+    var cs=seriesOf(d.k);
+    var inCombo=COMBO.filter(function(c){return c.k===d.k;})[0];
+    var row=el('div','crow'+(picked?'':' off'));
+    row.innerHTML='<input type="checkbox" class="ck" id="ck-'+d.k+'"'+(picked?' checked':'')+
+        ' aria-label="Show '+d.n+' on the combined chart">'+
+      '<div class="nm"><b>'+d.n+'</b><small>'+(d.unit||'no unit')+(d.diag?' \u00b7 diagnostic':'')+'</small></div>'+
+      '<span class="ax" id="ax-'+d.k+'">'+(inCombo?inCombo.axis.toUpperCase():(picked?'\u2014':''))+'</span>'+
+      '<span class="lprev" id="lp-'+d.k+'">'+lineSwatch(d.k)+'</span>'+
+      '<button type="button" class="cbtn" id="sc-'+d.k+'" aria-label="Colour for '+d.n+'"></button>'+
+      '<select class="lsel" id="ss-'+d.k+'">'+
         LINE_STYLES.map(function(x){
           return '<option value="'+x.id+'"'+(x.id===cs.s?' selected':'')+'>'+x.name+'</option>';
         }).join('')+'</select>';
     host.appendChild(row);
   });
-  COMBO.forEach(function(c){
-    var btn=$('sc-'+c.k), sel=$('ss-'+c.k);
-    if(!btn||!sel) return;
-    btn.style.background=seriesOf(c.k).c;
+  DEFS.forEach(function(d){
+    var btn=$('sc-'+d.k), sel=$('ss-'+d.k), ck=$('ck-'+d.k);
+    if(!btn||!sel||!ck) return;
+    btn.style.background=seriesOf(d.k).c;
+    ck.onchange=function(){
+      var cur=comboKeys().slice();
+      var i=cur.indexOf(d.k);
+      if(this.checked){ if(i<0) cur.push(d.k); }
+      else if(i>=0){ cur.splice(i,1); }
+      /* order the picked set the way the channels are defined, so the axes
+         come out in a predictable order whichever way they were ticked */
+      COMBO_PICK[ROOM.id]=DEFS.map(function(x){return x.k;})
+                              .filter(function(k){ return cur.indexOf(k)>=0; });
+      buildCombo(); buildSeriesRows(); comboAxisNote();
+      save(); rebuildSoon();
+    };
     btn.addEventListener('click',function(e){
       e.stopPropagation();
-      openPicker('series:'+c.k, c.label, btn, {
-        value:seriesOf(c.k).c,
+      openPicker('series:'+d.k, d.n, btn, {
+        value:seriesOf(d.k).c,
         onPick:function(hex){
-          CS[ROOM.id][c.k].c=hex; btn.style.background=hex;
-          $('lp-'+c.k).innerHTML=lineSwatch(c.k);
+          CS[ROOM.id][d.k]=CS[ROOM.id][d.k]||{s:'solid'};
+          CS[ROOM.id][d.k].c=hex; btn.style.background=hex;
+          $('lp-'+d.k).innerHTML=lineSwatch(d.k);
           save(); rebuildSoon();
         }
       });
     });
     sel.onchange=function(){
-      CS[ROOM.id][c.k].s=this.value;
-      $('lp-'+c.k).innerHTML=lineSwatch(c.k);
+      CS[ROOM.id][d.k]=CS[ROOM.id][d.k]||{c:COMBO_PAL[0]};
+      CS[ROOM.id][d.k].s=this.value;
+      $('lp-'+d.k).innerHTML=lineSwatch(d.k);
       save(); rebuildSoon();
     };
   });
   var ttl=$('seriesTitle');
-  if(ttl) ttl.textContent=ROOM.short+' \u2014 combined chart lines';
+  if(ttl) ttl.textContent=ROOM.short+' \u2014 combined chart';
+  comboAxisNote();
+}
+function comboAxisNote(){
+  var n=$('comboAxisNote'); if(!n) return;
+  var picked=comboKeys().length, drawn=COMBO.length;
+  if(!picked){ n.innerHTML='<b>Nothing ticked.</b> The combined chart falls back to the suggested set.'; return; }
+  var axes=COMBO_AXES.map(function(a){ return a.unit||'no unit'; });
+  var txt='Drawing <b>'+drawn+'</b> line'+(drawn===1?'':'s')+' on '+axes.length+
+          (axes.length===1?' scale':' scales')+' ('+axes.join(', ')+').';
+  if(COMBO_EXTRA.length){
+    var left=picked-drawn;
+    txt+=' <b>'+left+' ticked channel'+(left===1?'':'s')+' cannot be drawn</b> \u2014 '+
+         'they use '+COMBO_EXTRA.map(function(u){return u||'no unit';}).join(', ')+
+         ', and three scales is the most that stays readable. Untick channels from one of the scales above to make room.';
+  }
+  n.innerHTML=txt;
 }
 function syncSeriesUI(){
   COMBO.forEach(function(c){
@@ -3127,19 +3367,32 @@ function wireChartCfg(){
   };
 }
 function wireSeries(){
+  var setPick=function(keys,msg){
+    if(!ROOM) return;
+    COMBO_PICK[ROOM.id]=keys;
+    buildCombo(); buildSeriesRows(); save(); rebuildSoon();
+    log(msg,'s');
+  };
+  var a=$('csAll');
+  if(a) a.onclick=function(){ setPick(DEFS.map(function(d){return d.k;}),'All channels ticked'); };
+  var n=$('csNone');
+  if(n) n.onclick=function(){ setPick([],'Back to the suggested set'); };
+  var df=$('csDefault');
+  if(df) df.onclick=function(){ setPick(ROOM_COMBO_DEFAULT.slice(),'Suggested set restored'); };
   var r=$('csReset');
-  if(r) r.onclick=function(){ resetSeries(); syncSeriesUI(); save(); rebuildSoon();
-    log('Combined chart lines reset','s'); };
+  if(r) r.onclick=function(){ resetSeries(); buildSeriesRows(); save(); rebuildSoon();
+    log('Line colours reset','s'); };
   var d=$('csDash');
   if(d) d.onclick=function(){
     if(!ROOM) return;
     var half=Math.ceil(COMBO.length/2), any=false;
     COMBO.forEach(function(c,i){
       var dashed = ROOM.id==='coolroom' ? (i%2===1) : (i>=half);
+      CS[ROOM.id][c.k]=CS[ROOM.id][c.k]||{c:COMBO_PAL[i%COMBO_PAL.length]};
       CS[ROOM.id][c.k].s = dashed?'dashed':'solid';
       if(dashed) any=true;
     });
-    syncSeriesUI(); save(); rebuildSoon();
+    buildSeriesRows(); save(); rebuildSoon();
     log(any?'Alternate lines set to dashed':'Lines reset','s');
   };
 }
@@ -3151,12 +3404,322 @@ function bootUI(){
   applyType();
   applyChartCfg(false);
 }
+
+/* ================================================================
+   Alarms — limits per channel, checked in this browser only.
+   Nothing is sent anywhere, and nothing runs while the page is shut.
+   ================================================================ */
+
+/* AL[roomId][channelKey] = {on:bool, lo:number|null, hi:number|null, stuck:minutes|0} */
+var AL={}, AL_UI={sound:false, bands:true};
+var AL_STATE={};          /* roomId -> key -> last state, so a beep fires once */
+var AL_AC=null;
+
+function alRules(){
+  if(!ROOM) return {};
+  AL[ROOM.id]=AL[ROOM.id]||{};
+  return AL[ROOM.id];
+}
+function alRule(k){
+  var r=alRules();
+  if(!r[k]) r[k]={on:false, lo:null, hi:null, stuck:0};
+  return r[k];
+}
+function alAnyOn(){
+  var r=alRules();
+  return Object.keys(r).some(function(k){ return r[k].on; });
+}
+
+/* How long a channel has held exactly the same value, in minutes.
+   A frozen sensor is far more common than one that drifts out of range. */
+function alStuckMinutes(k){
+  var rows=S.rows;
+  if(!rows.length) return 0;
+  var last=null, i=rows.length-1;
+  for(; i>=0; i--){ if(rows[i][k]!=null){ last=rows[i][k]; break; } }
+  if(last==null) return 0;
+  var until=rows[i].t, from=until;
+  for(var j=i-1; j>=0; j--){
+    var v=rows[j][k];
+    if(v==null) continue;
+    if(v!==last) break;
+    from=rows[j].t;
+  }
+  return (until-from)/60000;
+}
+
+/* '' | 'ok' | 'low' | 'high' | 'stuck' | 'nodata' */
+function alEvaluate(k){
+  var r=alRule(k);
+  if(!r.on) return '';
+  var v=S.cur[k];
+  if(v==null||isNaN(v)) return 'nodata';
+  if(r.lo!=null && v<r.lo) return 'low';
+  if(r.hi!=null && v>r.hi) return 'high';
+  if(r.stuck>0 && alStuckMinutes(k)>=r.stuck) return 'stuck';
+  return 'ok';
+}
+function alSeverity(st){
+  return (st==='low'||st==='high') ? 'err'
+       : (st==='stuck'||st==='nodata') ? 'warn'
+       : st==='ok' ? 'ok' : 'idle';
+}
+function alWord(st){
+  return st==='low'?'Below limit' : st==='high'?'Above limit'
+       : st==='stuck'?'Not changing' : st==='nodata'?'No reading'
+       : st==='ok'?'Normal' : 'Off';
+}
+
+function alBeep(){
+  if(!AL_UI.sound) return;
+  try{
+    AL_AC=AL_AC||new (window.AudioContext||window.webkitAudioContext)();
+    var o=AL_AC.createOscillator(), g=AL_AC.createGain();
+    o.type='sine'; o.frequency.value=880;
+    g.gain.setValueAtTime(0.0001,AL_AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.16,AL_AC.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,AL_AC.currentTime+0.5);
+    o.connect(g); g.connect(AL_AC.destination);
+    o.start(); o.stop(AL_AC.currentTime+0.52);
+  }catch(e){}
+}
+
+function alRefresh(){
+  if(!ROOM) return;
+  var rules=alRules(), prev=AL_STATE[ROOM.id]=AL_STATE[ROOM.id]||{};
+  var cards='', bad=0, warn=0, watched=0, fresh=false;
+
+  DEFS.forEach(function(d){
+    var st=alEvaluate(d.k);
+    if(!st) return;
+    watched++;
+    var sev=alSeverity(st);
+    if(sev==='err') bad++; else if(sev==='warn') warn++;
+    if((sev==='err'||sev==='warn') && prev[d.k]!=='err' && prev[d.k]!=='warn') fresh=true;
+    prev[d.k]=sev;
+    var r=rules[d.k], v=S.cur[d.k];
+    var lim=[];
+    if(r.lo!=null) lim.push('low '+fmt(r.lo,d.dec));
+    if(r.hi!=null) lim.push('high '+fmt(r.hi,d.dec));
+    if(r.stuck>0) lim.push('stuck '+r.stuck+' min');
+    cards+='<div class="alcard '+sev+'"><div class="top"><i></i><b title="'+d.n+'">'+d.n+
+      '</b><span class="st">'+alWord(st)+'</span></div>'+
+      '<div class="big">'+fmt(v,d.dec)+'<u>'+(d.unit||'')+'</u></div>'+
+      '<div class="lim">'+(lim.join(' · ')||'no limits set')+'</div></div>';
+  });
+
+  var host=$('alStatus');
+  if(host) host.innerHTML = cards ||
+    '<div class="note">No channel is being watched yet. Tick one in <b>Limits</b> below.</div>';
+
+  var pill=$('alPill');
+  if(pill) pill.textContent = !watched ? 'Not watching'
+    : bad ? bad+' in alarm' : warn ? warn+' to check' : 'All normal';
+
+  var note=$('alNote');
+  if(note) note.textContent = !watched
+    ? 'Nothing is being checked, so nothing can be missed — or caught.'
+    : bad||warn
+      ? 'Checked against the latest reading, '+(S.cur.t?ago(S.cur.t):'age unknown')+'.'
+      : 'All '+watched+' watched channel'+(watched===1?'':'s')+' within limits, as of '+
+        (S.cur.t?fmtT(S.cur.t):'—')+'.';
+
+  var dot=(bad||warn)?'on':'';
+  ['railAlarm','mnavAlarm'].forEach(function(id){
+    var e=$(id); if(e) e.className=(id==='railAlarm'?'raildot ':'mdot ')+dot;
+  });
+  if(fresh) alBeep();
+  alBreachTable();
+}
+
+/* Every stretch in the loaded rows where a watched channel was outside its limits */
+function alBreachTable(){
+  var tb=$('alBreach'); if(!tb) return;
+  var rules=alRules(), out=[];
+  DEFS.forEach(function(d){
+    var r=rules[d.k];
+    if(!r||!r.on||(r.lo==null&&r.hi==null)) return;
+    var open=null;
+    S.rows.forEach(function(row){
+      var v=row[d.k];
+      var bad = v!=null && !isNaN(v) && ((r.lo!=null&&v<r.lo)||(r.hi!=null&&v>r.hi));
+      if(bad){
+        if(!open) open={k:d.k,n:d.n,unit:d.unit,dec:d.dec,from:row.t,to:row.t,
+                        worst:v,side:(r.lo!=null&&v<r.lo)?'low':'high'};
+        else{
+          open.to=row.t;
+          if(open.side==='low'){ if(v<open.worst) open.worst=v; }
+          else if(v>open.worst) open.worst=v;
+        }
+      }else if(open){ out.push(open); open=null; }
+    });
+    if(open) out.push(open);
+  });
+  out.sort(function(a,b){ return b.from-a.from; });
+  if(!out.length){
+    tb.innerHTML='<tr><th>Channel</th><th>When</th><th>For</th><th>Worst</th></tr>'+
+      '<tr><td colspan="4" style="color:var(--tx3)">'+
+      (alAnyOn()?'No breaches in the period shown on Detail.':'No limits set yet.')+'</td></tr>';
+    return;
+  }
+  var h='<tr><th>Channel</th><th>When</th><th>For</th><th>Worst</th></tr>';
+  out.slice(0,60).forEach(function(b){
+    var mins=Math.max(1,Math.round((b.to-b.from)/60000));
+    h+='<tr><td>'+b.n+'</td><td>'+fmtDT(b.from)+'</td>'+
+       '<td>'+(mins<60?mins+' min':(mins/60).toFixed(1)+' h')+'</td>'+
+       '<td style="color:var(--err)">'+(b.side==='low'?'↓ ':'↑ ')+
+       fmt(b.worst,b.dec)+' '+(b.unit||'')+'</td></tr>';
+  });
+  if(out.length>60) h+='<tr><td colspan="4" style="color:var(--tx3)">'+(out.length-60)+' more not shown.</td></tr>';
+  tb.innerHTML=h;
+}
+
+function alBuildRules(){
+  var host=$('alRules'); if(!host||!ROOM) return;
+  var t=$('alTitle'); if(t) t.textContent='for '+ROOM.short;
+  host.innerHTML='';
+  DEFS.forEach(function(d){
+    var r=alRule(d.k);
+    var row=el('div','alrow'+(r.on?' on':''));
+    row.innerHTML=
+      '<input type="checkbox" class="ck" id="al-on-'+d.k+'"'+(r.on?' checked':'')+
+        ' aria-label="Watch '+d.n+'">'+
+      '<div class="nm"><b>'+d.n+'</b><small>'+(d.unit||'no unit')+(d.diag?' · diagnostic':'')+'</small></div>'+
+      '<span class="lab">Low</span>'+
+      '<input type="number" step="any" id="al-lo-'+d.k+'" value="'+(r.lo==null?'':r.lo)+'" placeholder="—">'+
+      '<span class="lab">High</span>'+
+      '<input type="number" step="any" id="al-hi-'+d.k+'" value="'+(r.hi==null?'':r.hi)+'" placeholder="—">'+
+      '<span class="lab">Stuck</span>'+
+      '<input type="number" step="1" min="0" id="al-st-'+d.k+'" value="'+(r.stuck||'')+'" placeholder="min">';
+    host.appendChild(row);
+  });
+  DEFS.forEach(function(d){
+    var on=$('al-on-'+d.k), lo=$('al-lo-'+d.k), hi=$('al-hi-'+d.k), st=$('al-st-'+d.k);
+    var num=function(e){ var v=parseFloat(e.value); return (e.value===''||isNaN(v))?null:v; };
+    if(on) on.onchange=function(){
+      alRule(d.k).on=this.checked;
+      this.closest('.alrow').classList.toggle('on',this.checked);
+      save(); alRefresh(); rebuildSoon();
+    };
+    [lo,hi].forEach(function(e,i){
+      if(!e) return;
+      e.onchange=function(){
+        var r=alRule(d.k);
+        if(i===0) r.lo=num(e); else r.hi=num(e);
+        if(r.lo!=null&&r.hi!=null&&r.lo>r.hi){     /* swap rather than silently misbehave */
+          var tmp=r.lo; r.lo=r.hi; r.hi=tmp;
+          if(lo) lo.value=r.lo; if(hi) hi.value=r.hi;
+          log('Low was above high on '+d.n+' — swapped','w');
+        }
+        if((r.lo!=null||r.hi!=null)&&!r.on){ r.on=true; if(on) on.checked=true;
+          e.closest('.alrow').classList.add('on'); }
+        save(); alRefresh(); rebuildSoon();
+      };
+    });
+    if(st) st.onchange=function(){
+      var v=parseInt(this.value,10);
+      alRule(d.k).stuck=(isNaN(v)||v<=0)?0:v;
+      if(alRule(d.k).stuck&&!alRule(d.k).on){ alRule(d.k).on=true; if(on) on.checked=true;
+        this.closest('.alrow').classList.add('on'); }
+      save(); alRefresh();
+    };
+  });
+}
+
+/* Limits from what the sensor has actually been doing: the window seen on
+   Detail, padded by a quarter of its own spread. A starting point, not advice. */
+function alSuggest(){
+  if(!S.rows.length){ log('No readings loaded to suggest from','w'); return; }
+  var st=statsFor(S.rows), n=0;
+  DEFS.forEach(function(d){
+    var s=st[d.k]; if(!s) return;
+    var spread=s.max-s.min;
+    var pad=spread>0?spread*0.25:Math.max(Math.abs(s.avg)*0.1,Math.pow(10,-d.dec));
+    var r=alRule(d.k);
+    r.lo=+(s.min-pad).toFixed(d.dec);
+    r.hi=+(s.max+pad).toFixed(d.dec);
+    r.on=true; n++;
+  });
+  alBuildRules(); save(); alRefresh(); rebuildSoon();
+  log('Suggested limits for '+n+' channels from the period on Detail','s');
+}
+function alClear(){
+  if(!ROOM) return;
+  AL[ROOM.id]={};
+  alBuildRules(); save(); alRefresh(); rebuildSoon();
+  log('All limits cleared for '+ROOM.short,'s');
+}
+
+/* Shaded bands outside the limits, drawn behind one chart */
+function alBandsFor(g){
+  if(!AL_UI.bands) return [];
+  var out=[];
+  g.series.forEach(function(sr){
+    var r=alRules()[sr.k];
+    if(!r||!r.on) return;
+    if(r.lo!=null) out.push({to:r.lo, side:'lo'});
+    if(r.hi!=null) out.push({from:r.hi, side:'hi'});
+  });
+  return out;
+}
+var alBandPlugin={
+  id:'alBands',
+  beforeDatasetsDraw:function(chart,args,opts){
+    var bands=(opts&&opts.bands)||[];
+    if(!bands.length) return;
+    var y=chart.scales.y; if(!y) return;
+    var a=chart.chartArea, x=chart.ctx;
+    x.save();
+    /* shade the out-of-limits area, then draw the limit itself: when the
+       band fills the whole plot the shading alone tells you nothing */
+    x.fillStyle=hexA(TH.err,0.07);
+    bands.forEach(function(b){
+      var top,bot;
+      if(b.side==='hi'){ top=a.top; bot=Math.min(a.bottom,y.getPixelForValue(b.from)); }
+      else{ top=Math.max(a.top,y.getPixelForValue(b.to)); bot=a.bottom; }
+      if(bot>top) x.fillRect(a.left,top,a.right-a.left,bot-top);
+    });
+    x.strokeStyle=hexA(TH.err,0.55);
+    x.lineWidth=1; x.setLineDash([5,4]);
+    x.font='600 '+Math.round(10*CH.fsk)+'px '+
+      (getComputedStyle(document.body).fontFamily||'sans-serif');
+    x.fillStyle=hexA(TH.err,0.85);
+    x.textBaseline='bottom';
+    bands.forEach(function(b){
+      var v=(b.side==='hi')?b.from:b.to;
+      var py=y.getPixelForValue(v);
+      if(py<a.top-1||py>a.bottom+1) return;
+      x.beginPath(); x.moveTo(a.left,py); x.lineTo(a.right,py); x.stroke();
+      var lbl=(b.side==='hi'?'high ':'low ')+v;
+      x.fillText(lbl, a.left+6, b.side==='hi'?py-3:Math.min(a.bottom-2,py+13));
+    });
+    x.setLineDash([]);
+    x.restore();
+  }
+};
+function wireAlarms(){
+  var t=$('alTest');
+  if(t) t.onclick=function(){
+    var was=AL_UI.sound; AL_UI.sound=true; alBeep(); AL_UI.sound=was;
+  };
+  var s=$('alSuggest'); if(s) s.onclick=alSuggest;
+  var c=$('alClear'); if(c) c.onclick=alClear;
+  segPick('alSound',function(v){ AL_UI.sound=(v==='1'); segOn('alSound',v); save(); });
+  segPick('alBands',function(v){ AL_UI.bands=(v==='1'); segOn('alBands',v); save(); rebuildSoon(); });
+}
+function bootAlarms(){
+  segOn('alSound',AL_UI.sound?'1':'0');
+  segOn('alBands',AL_UI.bands?'1':'0');
+  alBuildRules();
+  alRefresh();
+}
 /* ================= boot ================= */
 loadSwatches();
 buildThemeGrid(); buildColourRows(); wireColourButtons(); wireSets(); renderSets();
 applyTheme(false);
 load();
 bootUI();
+wireAlarms();
 exEveryHint();
 setTab(S.stab||'connection');
 $('selSpan').value=S.span; $('selFrom').value=S.from; $('selTo').value=S.to;
@@ -3183,6 +3746,7 @@ async function startApp(){
   }
   setTx('roomTx', ROOM.name);
   bootSeries();
+  bootAlarms();
   buildCharts();
   schedule();
   await loadDays();
