@@ -805,6 +805,16 @@ body.locked .shell,body.locked .mnav{display:none!important}
                   <div class="opt"><label>Chart height</label>
                     <div class="seg" id="chH"><button data-v="s">Compact</button><button class="on" data-v="m">Normal</button><button data-v="l">Tall</button></div>
                   </div>
+                  <div class="opt"><label>Mouse wheel over a chart</label>
+                    <select id="chWheel">
+                      <option value="ctrl">Ctrl + wheel zooms (page scrolls normally)</option>
+                      <option value="wheel">Wheel alone zooms</option>
+                      <option value="off">Never zooms</option>
+                    </select>
+                    <div class="note">Dragging, shift+drag and pinch always zoom, whatever this is set to.</div>
+                  </div>
+                </div>
+                <div class="optrow" style="margin-top:15px">
                   <div class="opt"><label>Legend</label>
                     <div class="seg" id="chLeg"><button data-v="0">Off</button><button class="on" data-v="1">On</button></div>
                     <div class="note">On the combined chart, click a legend item to hide or show that line.</div>
@@ -1649,7 +1659,9 @@ function chartOpts(g){
       zoom:{
         limits:{x:{minRange:30000}},
         pan:{enabled:true,mode:'x',onPanComplete:function(c){afterZoom(g.id,c.chart);}},
-        zoom:{wheel:{enabled:true,speed:0.12},pinch:{enabled:true},
+        zoom:{wheel:{enabled:CH.wheel!=='off',speed:0.12,
+                     modifierKey:(CH.wheel==='ctrl'?'ctrl':undefined)},
+              pinch:{enabled:true},
               drag:{enabled:true,modifierKey:'shift',backgroundColor:hexA(TH.accent,0.15),
                     borderColor:TH.accent,borderWidth:1},
               mode:'x', onZoomComplete:function(c){afterZoom(g.id,c.chart);}}
@@ -1729,7 +1741,7 @@ function cardShell(g,tall,extraLegend){
     '<span class="zspan" id="zs-'+g.id+'"></span>'+
     '<div class="lg">'+extraLegend+'</div></div>'+
     '<div class="cv" style="height:'+tall+'px"><canvas id="c-'+g.id+'"></canvas></div>'+
-    '<div class="zhint">scroll to zoom · drag to pan · shift+drag to box-zoom · pinch on touch</div>';
+    '<div class="zhint">'+zoomHint()+'</div>';
 }
 function buildCharts(){
   var host=$('charts'); host.innerHTML='';
@@ -1798,8 +1810,40 @@ function stampSpans(){
     node.textContent=fmtDT(sc.min)+' → '+fmtDT(sc.max)+'  ('+spanText(sc.max-sc.min)+')';
   });
 }
+function zoomHint(){
+  var w = CH.wheel==='off'  ? 'drag to pan'
+        : CH.wheel==='ctrl' ? 'ctrl + scroll to zoom · drag to pan'
+        :                     'scroll to zoom · drag to pan';
+  return w+' · shift+drag to box-zoom · pinch on touch · data reloads to match the view';
+}
+/* After a zoom or pan settles, fetch the readings for the range now on
+   screen: zooming in gives finer data, zooming out brings in more. */
+function zoomRange(){
+  var k=Object.keys(S.charts)[0]; if(!k) return null;
+  var sc=S.charts[k].scales.x, lo=sc.min, hi=sc.max;
+  if(!isFinite(lo)||!isFinite(hi)||hi<=lo) return null;
+  var floor = S.days.length ? new Date(S.days[0]+'T00:00:00').getTime() : lo;
+  return {from:Math.max(lo,floor-864e5), to:Math.min(hi,Date.now()+6e4)};
+}
+async function zoomFetch(){
+  if(!S.zoomed||S.zbusy||S.busy) return;
+  var r=zoomRange(); if(!r||r.to<=r.from) return;
+  if(Math.abs(r.from-(S.zlo||0))<1500 && Math.abs(r.to-(S.zhi||0))<1500) return;
+  S.zbusy=true; S.zlo=r.from; S.zhi=r.to;
+  try{
+    setConn('Loading…','wait');
+    var d=await getJSON('/api/readings?from='+Math.round(r.from)+'&to='+Math.round(r.to)+
+                        '&max='+$('maxpts').value);
+    S.rows=d.readings||[]; S.total=d.total_in_range||0;
+    setConn('Connected','on');
+    setTx('cntTx', S.total+' in view');
+    await renderDetail({from:r.from,to:r.to,desc:'the zoomed view'});
+  }catch(e){
+    setConn('Cannot reach API','bad');
+  }finally{ S.zbusy=false; }
+}
 function afterZoom(id,chart){
-  if(S.zsync) return;
+  if(S.zsync||S.zreset) return;
   S.zsync=true; S.zoomed=true;
   var lo=chart.scales.x.min, hi=chart.scales.x.max;
   Object.keys(S.charts).forEach(function(k){
@@ -1810,10 +1854,13 @@ function afterZoom(id,chart){
   S.tickFmt=makeFmt(hi-lo);
   Object.keys(S.charts).forEach(function(k){ S.charts[k].update('none'); });
   stampSpans(); S.zsync=false;
+  clearTimeout(S.ztimer); S.ztimer=setTimeout(zoomFetch,450);
 }
 function resetZoom(){
-  S.zoomed=false;
+  S.zreset=true;
+  S.zoomed=false; S.zlo=null; S.zhi=null; clearTimeout(S.ztimer);
   Object.keys(S.charts).forEach(function(k){ try{S.charts[k].resetZoom('none');}catch(e){} });
+  setTimeout(function(){ S.zreset=false; },80);
   refresh();
 }
 
@@ -1967,6 +2014,8 @@ async function refresh(){
   if(S.busy) return;
   S.busy=true;
   var w=windowBounds();
+  if(S.zoomed && isFinite(S.zlo) && isFinite(S.zhi) && S.zhi>S.zlo)
+    w={from:S.zlo,to:S.zhi,desc:'the zoomed view'};
   try{
     setConn('Loading…','wait');
     var l=await getJSON('/api/latest');
@@ -2454,7 +2503,7 @@ resetSeries();
 function seriesOf(k){ return CS[k]||CS_DEF[k]; }
 
 /* ---- defaults ---- */
-var CH_DEF={type:'line',fill:true,op:13,smooth:true,w:2,pts:0,grid:'both',zero:false,h:'m',legend:true,fsk:1};
+var CH_DEF={type:'line',fill:true,op:13,smooth:true,w:2,pts:0,grid:'both',zero:false,h:'m',legend:true,fsk:1,wheel:'ctrl'};
 var TY_DEF={font:'jakarta',fsk:100,numk:100};
 var CH={}, TY={};
 Object.keys(CH_DEF).forEach(function(k){ CH[k]=CH_DEF[k]; });
@@ -2521,6 +2570,7 @@ function applyChartCfg(redraw){
   if(CH.type==='area'){ CH.type='line'; CH.fill=true; }
   var ty=$('chType'); if(ty) ty.value=CH.type;
   var gr=$('chGrid'); if(gr) gr.value=CH.grid;
+  var wh=$('chWheel'); if(wh) wh.value=CH.wheel;
   var w=$('chW'); if(w) w.value=Math.round(CH.w*10);
   var op=$('chOp'); if(op) op.value=CH.op;
   segOn('chSmooth',CH.smooth?'1':'0');
@@ -2704,6 +2754,8 @@ function wireChartCfg(){
   if(t) t.onchange=function(){ CH.type=this.value; applyChartCfg(); };
   var g=$('chGrid');
   if(g) g.onchange=function(){ CH.grid=this.value; applyChartCfg(); };
+  var wh=$('chWheel');
+  if(wh) wh.onchange=function(){ CH.wheel=this.value; applyChartCfg(); };
   var w=$('chW');
   if(w){ w.oninput=function(){ CH.w=(parseInt(this.value,10)||20)/10; var x=$('chWTag'); if(x) x.textContent=CH.w.toFixed(1); };
          w.onchange=function(){ applyChartCfg(); }; }
