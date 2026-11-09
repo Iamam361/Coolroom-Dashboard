@@ -547,7 +547,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
         <div class="toprow">
           <div>
             <div class="h1"><span>Export</span></div>
-            <p class="sub">Full resolution — every reading in the period, not the thinned view.</p>
+            <p class="sub">Reads the full record for the period, not the thinned chart view — then spaces the rows however you like.</p>
           </div>
         </div>
 
@@ -573,6 +573,33 @@ body.locked .shell,body.locked .mnav{display:none!important}
             <button class="btn sm" data-q="30">Last 30 days</button>
             <button class="btn sm" data-q="all">Everything</button>
           </div>
+        </div>
+
+        <div class="card pad" style="margin-bottom:16px">
+          <div class="sect">How often</div>
+          <div class="optrow">
+            <div class="opt"><label>Interval between rows</label>
+              <select id="exEvery">
+                <option value="0">Every reading (as recorded)</option>
+                <option value="60">Every 1 minute</option>
+                <option value="300">Every 5 minutes</option>
+                <option value="600">Every 10 minutes</option>
+                <option value="900">Every 15 minutes</option>
+                <option value="1800">Every 30 minutes</option>
+                <option value="3600">Every 1 hour</option>
+                <option value="86400">Every day</option>
+              </select>
+              <div class="note">Your sensor records roughly every 30 seconds. A wider interval makes a smaller, tidier file.</div>
+            </div>
+            <div class="opt"><label>Value for each row</label>
+              <div class="seg" id="exHow">
+                <button class="on" data-v="avg">Average</button>
+                <button data-v="first">First reading</button>
+              </div>
+              <div class="note"><b>Average</b> is the mean of every reading in the interval, kept to one decimal beyond the sensor&rsquo;s own precision. <b>First reading</b> is one real recorded value, unchanged.</div>
+            </div>
+          </div>
+          <div class="note" id="exEveryNote" style="margin-top:12px"></div>
         </div>
 
         <div class="card pad">
@@ -2349,6 +2376,55 @@ function exportCSV(rows){
            'Cool_Room_'+fmtDate(new Date())+'_'+fmtTime(new Date()).replace(/:/g,'-')+'.csv');
 }
 
+var DEC={}; DEFS.forEach(function(d){ DEC[d.k]=d.dec; });
+/* Group readings into fixed time buckets for export.
+   step = seconds per row; 0 means leave every reading alone. */
+function resampleRows(rows,step,how){
+  if(!step||step<=0||!rows.length) return rows;
+  var ms=step*1000, out=[], bucket=null, acc=null, n=0;
+  function flush(){
+    if(bucket===null) return;
+    if(how==='first'){ out.push(acc); return; }
+    var r={t:acc.t};
+    KEYS.forEach(function(k){
+      if(!acc[k].c){ r[k]=null; return; }
+      /* one decimal beyond the sensor's own precision: averaging really does
+         resolve a little finer, but 25.633333333 implies nonsense */
+      var p=Math.pow(10,(DEC[k]==null?1:DEC[k])+1);
+      r[k]=Math.round((acc[k].s/acc[k].c)*p)/p;
+    });
+    out.push(r);
+  }
+  rows.forEach(function(r){
+    var b=Math.floor(r.t/ms)*ms;
+    if(b!==bucket){
+      flush(); bucket=b; n=0;
+      if(how==='first'){ acc=r; }
+      else { acc={t:b}; KEYS.forEach(function(k){ acc[k]={s:0,c:0}; }); }
+    }
+    if(how!=='first'){
+      KEYS.forEach(function(k){
+        var v=r[k];
+        if(v!=null&&!isNaN(v)){ acc[k].s+=v; acc[k].c++; }
+      });
+    }
+    n++;
+  });
+  flush();
+  return out;
+}
+function exEveryStep(){ var e=$('exEvery'); return e?parseInt(e.value,10)||0:0; }
+function exEveryHow(){
+  var h=$('exHow'); if(!h) return 'avg';
+  var on=h.querySelector('.on');
+  return on?on.dataset.v:'avg';
+}
+function exEveryLabel(){
+  var s=exEveryStep();
+  if(!s) return 'every reading as recorded';
+  var t=$('exEvery'), txt=t?t.options[t.selectedIndex].text.toLowerCase():('every '+s+' s');
+  return txt+', '+(exEveryHow()==='avg'?'averaged':'first reading of each');
+}
 async function doExport(kind){
   var f=fromInput($('exFrom').value), t=fromInput($('exTo').value);
   if(f==null||t==null){
@@ -2360,11 +2436,14 @@ async function doExport(kind){
   ['bXlsx','bXlsxPlain','bCsv'].forEach(function(id){ $(id).disabled=true; });
   $('exNote').textContent='Fetching…';
   try{
-    var rows=await fetchFull(f,t,function(n){ $('exNote').textContent='Fetched '+n+' readings…'; });
-    if(!rows.length){ $('exNote').textContent='No readings in that period.'; return; }
+    var raw=await fetchFull(f,t,function(n){ $('exNote').textContent='Fetched '+n+' readings…'; });
+    if(!raw.length){ $('exNote').textContent='No readings in that period.'; return; }
+    var step=exEveryStep();
+    var rows=resampleRows(raw,step,exEveryHow());
+    var shrink=step?(' from '+raw.length+' readings, '+exEveryLabel()):'';
     if(kind==='csv'){
       exportCSV(rows);
-      $('exNote').textContent='Exported '+rows.length+' readings as CSV.';
+      $('exNote').textContent='Exported '+rows.length+' row'+(rows.length===1?'':'s')+' as CSV'+shrink+'.';
     }else{
       if(typeof ExcelJS==='undefined'){
         $('exNote').textContent='The Excel library did not load. Use CSV, or check your connection.';
@@ -2376,9 +2455,9 @@ async function doExport(kind){
       var buf=await wb.xlsx.writeBuffer();
       saveBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),
         'Cool_Room_'+fmtDate(new Date())+'_'+fmtTime(new Date()).replace(/:/g,'-')+'.xlsx');
-      $('exNote').textContent='Exported '+rows.length+' readings as Excel'+(withCharts?' with charts':'')+'.';
+      $('exNote').textContent='Exported '+rows.length+' row'+(rows.length===1?'':'s')+' as Excel'+(withCharts?' with charts':'')+shrink+'.';
     }
-    log('Exported '+rows.length+' readings ('+kind+')','g');
+    log('Exported '+rows.length+' rows ('+kind+(step?', every '+step+' s':'')+')','g');
   }catch(e){
     $('exNote').textContent='Export failed: '+e.message;
     log('Export failed: '+e.message,'e');
@@ -2393,7 +2472,8 @@ function save(){
     api:$('api').value, poll:$('poll').value, maxpts:$('maxpts').value,
     stale:$('staleAfter').value, stab:S.stab, meas:S.meas, cmp:S.cmp,
     span:S.span, date:S.date, from:S.from, to:S.to,
-    ch:CH, ty:TY, cs:CS})); }catch(e){}
+    ch:CH, ty:TY, cs:CS,
+    exEvery:exEveryStep(), exHow:exEveryHow()})); }catch(e){}
 }
 function load(){
   try{
@@ -2411,6 +2491,9 @@ function load(){
     if(typeof c.to==='number') S.to=c.to;
     if(c.ch) Object.keys(CH).forEach(function(k){ if(c.ch[k]!=null) CH[k]=c.ch[k]; });
     if(c.ty) Object.keys(TY).forEach(function(k){ if(c.ty[k]!=null) TY[k]=c.ty[k]; });
+    if(c.exEvery!=null && $('exEvery')) $('exEvery').value=String(c.exEvery);
+    if(c.exHow && $('exHow')) Array.prototype.forEach.call($('exHow').children,function(b){
+      b.classList.toggle('on', b.dataset.v===c.exHow); });
     if(c.cs) Object.keys(CS).forEach(function(k){
       if(c.cs[k]){ if(c.cs[k].c) CS[k].c=c.cs[k].c; if(c.cs[k].s) CS[k].s=c.cs[k].s; } });
   }catch(e){}
@@ -2456,6 +2539,22 @@ $('api').onchange=function(){ save(); loadDays().then(refresh); };
 $('poll').onchange=function(){ save(); schedule(); };
 $('maxpts').onchange=function(){ save(); refresh(); };
 $('staleAfter').onchange=function(){ save(); renderOverview(); };
+function exEveryHint(){
+  var n=$('exEveryNote'); if(!n) return;
+  var s=exEveryStep();
+  n.textContent = s
+    ? 'One row per '+($('exEvery').options[$('exEvery').selectedIndex].text.replace(/^Every /,''))+
+      ', '+(exEveryHow()==='avg'?'averaging every reading inside it.':'taking the first reading inside it.')
+    : 'One row per reading, exactly as the sensor recorded them.';
+}
+if($('exEvery')) $('exEvery').onchange=function(){ exEveryHint(); save(); };
+if($('exHow')) Array.prototype.forEach.call($('exHow').children,function(b){
+  b.onclick=function(){
+    Array.prototype.forEach.call($('exHow').children,function(x){ x.classList.remove('on'); });
+    b.classList.add('on'); exEveryHint(); save();
+  };
+});
+exEveryHint();
 $('bXlsx').onclick=function(){ doExport('xlsx-charts'); };
 $('bXlsxPlain').onclick=function(){ doExport('xlsx'); };
 $('bCsv').onclick=function(){ doExport('csv'); };
@@ -2789,6 +2888,7 @@ buildThemeGrid(); buildColourRows(); wireColourButtons(); wireSets(); renderSets
 applyTheme(false);
 load();
 bootUI();
+exEveryHint();
 setTab(S.stab||'connection');
 $('selSpan').value=S.span; $('selFrom').value=S.from; $('selTo').value=S.to;
 syncRangeUI();
