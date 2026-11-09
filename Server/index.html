@@ -94,8 +94,13 @@ svg{display:block}
 .tile:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(22,22,26,.09)}
 .tile{color:var(--tile-tx)}
 .tile.temp .tile-ic{color:var(--ic-temp)} .tile.hum .tile-ic{color:var(--ic-hum)}
+.tile.gas1 .tile-ic{color:#e04f2f} .tile.gas2 .tile-ic{color:#e08700}
+.tile.gas3 .tile-ic{color:#2563eb} .tile.gas4 .tile-ic{color:#0891b2}
+.tile.gas5 .tile-ic{color:#16a34a} .tile.gas6 .tile-ic{color:#9333ea}
 .tile.vel .tile-ic{color:var(--ic-vel)}
 .tile.temp{background:var(--t-temp)} .tile.hum{background:var(--t-hum)} .tile.vel{background:var(--t-vel)}
+.tile.gas1,.tile.gas2{background:var(--t-temp)} .tile.gas3,.tile.gas4{background:var(--t-hum)}
+.tile.gas5,.tile.gas6{background:var(--t-vel)}
 .tile-top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .tile-ic{width:34px;height:34px;border-radius:11px;background:var(--tile-badge);
   display:flex;align-items:center;justify-content:center;flex:none}
@@ -180,6 +185,10 @@ code{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:calc(11.5px*va
 .ch-h.temp .cic{background:var(--t-temp);color:var(--ic-temp)}
 .ch-h.hum .cic{background:var(--t-hum);color:var(--ic-hum)}
 .ch-h.vel .cic{background:var(--t-vel);color:var(--ic-vel)}
+.ch-h.gas1 .cic{background:var(--t-temp);color:#e04f2f} .ch-h.gas2 .cic{background:var(--t-temp);color:#e08700}
+.ch-h.gas3 .cic{background:var(--t-hum);color:#2563eb}  .ch-h.gas4 .cic{background:var(--t-hum);color:#0891b2}
+.ch-h.gas5 .cic{background:var(--t-vel);color:#16a34a}  .ch-h.gas6 .cic{background:var(--t-vel);color:#9333ea}
+.chip.alt{margin-left:auto}
 .ch-h b{font-size:calc(15px*var(--fsk));font-weight:700;letter-spacing:-.3px}
 .ch-h .u{font-size:calc(11.5px*var(--fsk));color:var(--tx3);font-weight:600}
 .zspan{font-size:calc(11px*var(--fsk));color:var(--tx3);font-variant-numeric:tabular-nums}
@@ -412,6 +421,8 @@ body.locked .shell,body.locked .mnav{display:none!important}
 
 <svg style="display:none">
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.2 12 3l9 7.2V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-gas" viewBox="0 0 24 24"><circle cx="8" cy="9" r="2.1"/><circle cx="15.5" cy="6.5" r="1.5"/><circle cx="16" cy="13" r="2.6"/><circle cx="9.5" cy="16.5" r="1.7"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2s4.5 4.2 4.5 8.2a4.5 4.5 0 0 1-9 0C7.5 8.4 9 6.6 9 6.6"/><path d="M12 22a6 6 0 0 0 6-6c0-1.6-.6-3-1.5-4.2"/><path d="M12 22a6 6 0 0 1-6-6c0-1.2.3-2.3.9-3.3"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 2 3 7l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></symbol>
   <symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></symbol>
   <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1 14h6M9 8h6M17 16h6"/></symbol>
@@ -475,7 +486,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
       <section class="view on" id="v-overview">
         <div class="toprow">
           <div>
-            <div class="h1"><span>Cool room</span><span>at a glance</span></div>
+            <div class="h1"><span id="ovTitle">Cool room</span><span>at a glance</span></div>
             <p class="sub" id="ovSub">—</p>
           </div>
           <div class="right">
@@ -484,10 +495,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
           </div>
         </div>
 
-        <div class="chips" id="roomChips">
-          <button class="chip on" data-room="coolroom">
-            <span class="cic"><svg class="ic sm"><use href="#i-home"/></svg></span>Cool room 1</button>
-        </div>
+        <div class="chips" id="roomChips"></div>
 
         <div class="tiles" id="tileGrid"></div>
 
@@ -502,7 +510,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
         <div class="toprow">
           <div>
             <div class="h1"><span>Detail</span></div>
-            <p class="sub">Scroll to zoom, drag to pan, shift+drag to box-zoom.</p>
+            <p class="sub" id="dtSub">Ctrl + scroll to zoom, drag to pan, shift+drag to box-zoom.</p>
           </div>
           <div class="right">
             <span class="pill" id="pointsPill">—</span>
@@ -510,13 +518,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
           </div>
         </div>
 
-        <div class="chips" id="measChips">
-          <button class="chip on" data-m="all"><span class="cic"><svg class="ic sm"><use href="#i-chart"/></svg></span>All</button>
-          <button class="chip" data-m="T"><span class="cic"><svg class="ic sm"><use href="#i-temp"/></svg></span>Temperature</button>
-          <button class="chip" data-m="H"><span class="cic"><svg class="ic sm"><use href="#i-drop"/></svg></span>Humidity</button>
-          <button class="chip" data-m="V"><span class="cic"><svg class="ic sm"><use href="#i-wind"/></svg></span>Air velocity</button>
-          <button class="chip" data-m="combo"><span class="cic"><svg class="ic sm"><use href="#i-layers"/></svg></span>Combined</button>
-        </div>
+        <div class="chips" id="measChips"></div>
 
         <div class="toolbar">
           <div><label>Date</label><select id="selDate"></select></div>
@@ -849,12 +851,12 @@ body.locked .shell,body.locked .mnav{display:none!important}
                 </div>
               </div>
               <div class="card pad">
-                <div class="sect">Combined chart &mdash; the six lines</div>
-                <div class="note" style="margin:0 0 13px">Each sensor gets its own colour and line style. These apply only to the <b>Combined</b> view on the Detail page.</div>
+                <div class="sect" id="seriesTitle">Combined chart lines</div>
+                <div class="note" style="margin:0 0 13px">Each line on the <b>Combined</b> view gets its own colour and style. Saved separately for each room.</div>
                 <div id="seriesRows"></div>
                 <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">
-                  <button class="btn sm" id="csReset" type="button">Reset the six lines</button>
-                  <button class="btn sm" id="csDash" type="button">Make outlets dashed</button>
+                  <button class="btn sm" id="csReset" type="button">Reset these lines</button>
+                  <button class="btn sm" id="csDash" type="button">Dash alternate lines</button>
                 </div>
               </div>
 
@@ -894,7 +896,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
                 <div class="note" style="margin:0 0 11px">Showing more than one room needs a change on the server, which hasn't been made yet.</div>
                 <table class="stats">
                   <tr><th>Room</th><th>Source</th><th>Readings</th></tr>
-                  <tr><td>Cool room 1</td><td id="srcTx">—</td><td id="cntTx">—</td></tr>
+                  <tr><td id="roomTx">—</td><td id="srcTx">—</td><td id="cntTx">—</td></tr>
                 </table>
               </div>
             </div>
@@ -961,52 +963,164 @@ body.locked .shell,body.locked .mnav{display:none!important}
 var DEMO_SRC=[[1794044303000,25.9,84.9,0,26.3,86,0],[1794044393000,25.6,85,0.5,31,70.5,3.6],[1794044483000,25.5,85.8,0.2,30.7,71.1,0.4],[1794044603000,25.6,85.4,0,29.7,73.6,0],[1794044693000,25.6,85.1,0,29.2,75,0],[1794044783000,25.6,85.4,0,28.6,77.7,0.1],[1794044873000,25.7,85.3,0,28.1,78.4,0],[1794045023000,25.7,85,0,27.4,80.9,0],[1794045203000,25.6,85.3,0.6,30.9,70.7,3.7],[1794045270000,25.6,85.9,0.2,31,70.6,1.2],[1794045360000,25.6,85,0,30.4,72.1,0.1],[1794045480000,25.7,85.4,0,29.5,74.7,0],[1794045570000,25.7,85.3,0,28.9,77,0],[1794045660000,25.8,85.9,0,28.4,78.5,0],[1794045750000,25.8,85.8,0,27.9,79.6,0],[1794045870000,25.8,85.3,0,27.5,81.3,0],[1794045960000,25.8,85,0,27.2,81.8,0],[1794046050000,25.6,86.2,0.8,31.1,70.3,3.6],[1794046140000,25.5,86.9,0.1,30.6,72.1,0.3],[1794046260000,25.6,86.6,0,29.6,74.2,0],[1794046350000,25.6,86.7,0,28.9,76.7,0],[1794047063000,25.3,87.4,0.2,29.6,74.7,0],[1794047153000,25.4,87.5,0.1,29,76.5,0],[1794047273000,25.5,87.6,0,28.1,78.6,0],[1794047363000,25.5,86.5,0,27.7,80.4,0],[1794047453000,25.5,87,0,27.2,82,0],[1794047543000,25.5,86.9,0,26.9,83.4,0],[1794047663000,25.4,86.9,0.5,30.5,72.5,4],[1794047753000,25.2,87.6,0.3,30.5,71.6,0.7],[1794047843000,25.3,86.9,0.3,29.6,74,0],[1794047933000,25.3,86.9,0.3,28.9,76.1,0],[1794048053000,25.3,86.9,0.3,28.1,78.3,0],[1794048143000,25.3,86.7,0.2,27.6,80.2,0],[1794048233000,25.3,87.5,1.9,27.2,81.5,0],[1794048323000,25.3,86.4,0.2,26.9,81.7,0],[1794048443000,25.3,86.6,0,26.8,83.6,0],[1794048533000,25.1,87.5,0.7,30.4,71.8,4.2],[1794048623000,25,87.7,0.1,29.8,73,0.3],[1794048713000,25,87.7,0,29.2,74.5,0],[1794048833000,25.1,87.6,0,28.4,77.4,0],[1794048923000,25.1,87.4,0,27.8,78.3,0],[1794049013000,25.2,87.2,0,27.3,80.6,0],[1794049103000,25.2,87.4,0,26.8,81.9,0],[1794049223000,25.1,86.8,0,26.3,83.7,0],[1794049313000,25,87.9,0.4,29.5,75.4,4.1],[1794049403000,24.9,88.5,0.3,30.2,72.6,1.5],[1794049493000,24.8,87.5,0.1,29.6,73.3,0.2],[1794049583000,24.9,87.4,0,28.8,75.5,0],[1794049703000,24.9,87.2,0,28,77,0],[1794049793000,24.9,87.2,0,27.5,79.1,0],[1794049883000,24.9,87.2,0,27,80.7,0],[1794049973000,25,87.2,0,26.6,81.8,0],[1794050093000,25,87.7,0,26.2,84.1,0],[1794050183000,25,87.7,0,25.9,84.8,0],[1794050273000,25,87.7,0,25.6,85.9,0],[1794050363000,24.9,87.9,0,25.4,87,0],[1794050483000,24.9,87.5,0,25.2,88.2,0],[1794050573000,24.9,87.6,0,25.1,89.1,0],[1794050663000,24.8,87.7,0,25.1,88.4,0],[1794050753000,24.8,87.8,0,25,89.1,0],[1794050873000,24.8,88,0,24.9,89.2,0],[1794050963000,24.8,88.2,0,24.9,89.6,0],[1794051053000,24.8,88.3,0,24.9,89.7,0],[1794051143000,24.8,88.2,0,24.8,90.2,0],[1794051263000,24.8,88.5,0,24.8,90.5,0],[1794051353000,24.8,89,0,24.7,90.9,0],[1794051443000,24.7,88.8,0,24.7,90.9,0],[1794051533000,24.7,88.9,0,24.7,91.3,0],[1794051653000,24.7,88.3,0,24.6,91.1,0.2],[1794051743000,24.7,88.9,0,24.6,91.2,0],[1794051833000,24.7,88.7,0,24.6,91,0],[1794051923000,24.7,88.8,0,24.6,91.2,0],[1794052043000,24.6,88.7,0,24.6,91.2,0],[1794052133000,24.6,88.9,0,24.6,91.2,0],[1794052223000,24.6,89,0,24.6,91.3,0],[1794052313000,24.6,89.4,0,24.6,92.3,0],[1794052433000,24.6,89.3,0,24.6,91.6,0],[1794052523000,24.6,89.5,0,24.5,91.8,0],[1794052613000,24.6,89.2,0,24.5,91.8,0],[1794052703000,24.6,88.9,0,24.5,92.1,0],[1794052823000,24.6,89.1,0,24.5,92,0],[1794052913000,24.5,89,0,24.5,92,0],[1794053003000,24.5,89.2,0,24.5,92.7,0],[1794053093000,24.5,89.2,0,24.5,92,0],[1794053213000,24.6,89.1,0,24.5,91.7,0],[1794053303000,24.6,89,0,24.5,92.1,0],[1794053393000,24.5,88.9,0,24.5,91.8,0],[1794053483000,24.5,89.2,0,24.5,92,0],[1794053603000,24.5,89.2,0,24.5,91.7,0],[1794053693000,24.5,89.3,0,24.5,91.9,0],[1794053783000,24.5,89.3,0,24.4,92.1,0],[1794053873000,24.5,89.5,0,24.4,92.8,0],[1794053993000,24.5,89.1,0,24.4,92.3,0],[1794054083000,24.5,89.2,0,24.4,92.9,0],[1794054173000,24.5,89.2,0,24.5,92.3,0],[1794054263000,24.5,89,0,24.5,91.9,0],[1794054353000,24.5,88.7,0,24.4,91.8,0],[1794054473000,24.5,88.9,0,24.4,91.8,0],[1794054563000,24.5,89.1,0,24.4,91.8,0],[1794054653000,24.5,88.7,0,24.4,91.8,0],[1794054743000,24.5,88.7,0,24.4,92.1,0],[1794054863000,24.5,88.8,0,24.4,91.6,0],[1794054953000,24.5,88.8,0,24.4,91.7,0],[1794055043000,24.5,89.1,0,24.4,92,0],[1794055133000,24.5,88.9,0,24.4,92.2,0],[1794055253000,24.5,89.4,0,24.4,92.2,0],[1794055343000,24.5,89.2,0,24.4,92.7,0],[1794055433000,24.5,89.5,0,24.4,92.5,0],[1794055523000,24.5,89.8,0,24.4,92.7,0],[1794055643000,24.5,89.7,0,24.4,92.5,0],[1794055733000,24.5,89.7,0,24.4,92.8,0],[1794055823000,24.5,89.7,0,24.3,92.7,0],[1794055913000,24.5,90,0,24.3,93.2,0],[1794056033000,24.5,89.9,0,24.3,93.2,0],[1794056123000,24.5,89.8,0,24.4,93.1,0],[1794056213000,24.5,90.2,0,24.3,93.4,0],[1794056303000,24.5,90.3,0,24.4,93.2,0],[1794056423000,24.5,90.1,0,24.4,93.4,0],[1794056513000,24.5,90.3,0,24.4,93.9,0],[1794056603000,24.5,90.3,0,24.4,94.2,0],[1794056693000,24.5,90.4,0,24.4,94.2,0],[1794056813000,24.6,90.7,0,24.4,95,0],[1794056903000,24.5,90.6,0,24.4,94.3,0],[1794056993000,24.5,90.2,0,24.4,93.8,0],[1794057083000,24.5,90.8,0,24.4,94.7,0],[1794057203000,24.6,91.4,0,24.5,94.5,0],[1794057293000,24.6,91,0,24.4,94.2,0],[1794057383000,24.6,90.6,0,24.4,93.9,0],[1794057473000,24.6,90.2,0,24.5,93.5,0],[1794057593000,24.6,90.2,0,24.5,93.7,0],[1794057683000,24.6,90.5,0,24.5,93.9,0],[1794057773000,24.6,91.1,0,24.5,94.4,0],[1794057863000,24.6,90.8,0,24.5,94.3,0],[1794057983000,24.6,90.8,0,24.5,94.1,0],[1794058073000,24.6,91.6,0,24.5,95.2,0],[1794058163000,24.7,91.3,0,24.5,94.9,0],[1794058253000,24.6,91.3,0,24.5,95,0],[1794058373000,24.7,91.6,0,24.5,95.1,0],[1794058463000,24.7,91,0,24.6,94.8,0],[1794058553000,24.7,90.7,0,24.5,94.5,0]];
 /* ===== demo mode: only when the file is opened from your computer, never on the server ===== */
 var DEMO=(location.protocol==='file:');
-var DEMO_ROWS=null;
-function demoRows(){
-  if(DEMO_ROWS) return DEMO_ROWS;
-  var b=DEMO_SRC, t0=b[0][0], span=b[b.length-1][0]-t0+90000;
-  var end=Date.now(), reps=Math.ceil(48*3600e3/span), start=end-reps*span, out=[];
-  for(var i=0;i<reps;i++){
-    for(var j=0;j<b.length;j++){
-      var r=b[j], t=start+i*span+(r[0]-t0)+span-(b[b.length-1][0]-t0)-90000;
-      if(t<=end) out.push({t:t,T_in:r[1],H_in:r[2],V_in:r[3],T_out:r[4],H_out:r[5],V_out:r[6]});
+
+/* ---- demo mode: the page opened straight from disk, so stand in for the
+   server with generated data for both rooms. Never used over http. ---- */
+var DEMO_CACHE={};
+function demoRooms(){
+  return {rooms:[
+    {id:'coolroom', name:'Cool room', short:'Cool room', available:true,
+     channels:[
+       {key:'T_in', label:'Temperature \u2014 inlet',  unit:'\u00b0C', dec:1},
+       {key:'H_in', label:'Humidity \u2014 inlet',     unit:'%RH',      dec:1},
+       {key:'V_in', label:'Air velocity \u2014 inlet', unit:'m/s',      dec:2},
+       {key:'T_out',label:'Temperature \u2014 outlet', unit:'\u00b0C', dec:1},
+       {key:'H_out',label:'Humidity \u2014 outlet',    unit:'%RH',      dec:1},
+       {key:'V_out',label:'Air velocity \u2014 outlet',unit:'m/s',      dec:2}],
+     groups:[
+       {id:'T',title:'Temperature', short:'Temp',unit:'\u00b0C',dec:1,icon:'i-temp',cls:'temp',paired:true,
+        series:[{k:'T_in',label:'Inlet'},{k:'T_out',label:'Outlet'}]},
+       {id:'H',title:'Humidity',    short:'Hum', unit:'%RH',dec:1,icon:'i-drop',cls:'hum',paired:true,
+        series:[{k:'H_in',label:'Inlet'},{k:'H_out',label:'Outlet'}]},
+       {id:'V',title:'Air velocity',short:'Vel', unit:'m/s',dec:2,icon:'i-wind',cls:'vel',paired:true,
+        series:[{k:'V_in',label:'Inlet'},{k:'V_out',label:'Outlet'}]}],
+     combo:{axes:[{id:'y1',title:'Temperature (\u00b0C)',unit:'\u00b0C',side:'left'},
+                  {id:'y2',title:'Humidity (%RH)',unit:'%RH',side:'right'},
+                  {id:'y3',title:'Air velocity (m/s)',unit:'m/s',side:'right'}],
+            series:[{k:'T_in',short:'Temp in',axis:'y1'},{k:'T_out',short:'Temp out',axis:'y1'},
+                    {k:'H_in',short:'Hum in',axis:'y2'},{k:'H_out',short:'Hum out',axis:'y2'},
+                    {k:'V_in',short:'Vel in',axis:'y3'},{k:'V_out',short:'Vel out',axis:'y3'}]}},
+    {id:'gas', name:'Mitr Phol gas sensor', short:'Gas sensor', available:true,
+     channels:[
+       {key:'co',  label:'Carbon monoxide',unit:'ppm', dec:2},
+       {key:'ch4l',label:'Methane (laser)',unit:'%LEL',dec:2},
+       {key:'ch4m',label:'Methane (MiCS)', unit:'ppm', dec:2},
+       {key:'o2',  label:'Oxygen',         unit:'%Vol',dec:2},
+       {key:'co2', label:'Carbon dioxide', unit:'ppm', dec:2},
+       {key:'etoh',label:'Ethanol',        unit:'ppm', dec:2},
+       {key:'voc', label:'VOC',            unit:'ppm', dec:2},
+       {key:'temp',label:'Temperature',    unit:'\u00b0C',dec:2},
+       {key:'rh',  label:'Humidity',       unit:'%',   dec:2},
+       {key:'flow',label:'Flow',           unit:'m/s', dec:2},
+       {key:'p1',  label:'Probe 1',        unit:'\u00b0C',dec:2,diag:true},
+       {key:'p2',  label:'Probe 2',        unit:'\u00b0C',dec:2,diag:true},
+       {key:'p3',  label:'Probe 3',        unit:'\u00b0C',dec:2,diag:true}],
+     groups:[
+       {id:'CO',  title:'Carbon monoxide',short:'CO',  unit:'ppm', dec:2,icon:'i-gas',cls:'gas1',series:[{k:'co',label:'CO'}]},
+       {id:'CH4', title:'Methane',        short:'CH\u2084',unit:'ppm',dec:2,icon:'i-flame',cls:'gas2',series:[{k:'ch4m',label:'MiCS'}]},
+       {id:'CH4L',title:'Methane, laser', short:'CH\u2084 laser',unit:'%LEL',dec:2,icon:'i-flame',cls:'gas2',series:[{k:'ch4l',label:'Laser'}]},
+       {id:'O2',  title:'Oxygen',         short:'O\u2082',unit:'%Vol',dec:2,icon:'i-gas',cls:'gas3',series:[{k:'o2',label:'O\u2082'}]},
+       {id:'CO2', title:'Carbon dioxide', short:'CO\u2082',unit:'ppm',dec:2,icon:'i-gas',cls:'gas4',series:[{k:'co2',label:'CO\u2082'}]},
+       {id:'ETOH',title:'Ethanol',        short:'EtOH',unit:'ppm',dec:2,icon:'i-gas',cls:'gas5',series:[{k:'etoh',label:'Ethanol'}]},
+       {id:'VOC', title:'VOC',            short:'VOC', unit:'ppm',dec:2,icon:'i-gas',cls:'gas6',series:[{k:'voc',label:'VOC'}]},
+       {id:'TEMP',title:'Temperature',    short:'Temp',unit:'\u00b0C',dec:2,icon:'i-temp',cls:'temp',series:[{k:'temp',label:'SHT31'}]},
+       {id:'RH',  title:'Humidity',       short:'Hum', unit:'%',  dec:2,icon:'i-drop',cls:'hum',series:[{k:'rh',label:'RH'}]},
+       {id:'FLOW',title:'Flow',           short:'Flow',unit:'m/s',dec:2,icon:'i-wind',cls:'vel',series:[{k:'flow',label:'Flow'}]},
+       {id:'PROBE',title:'Probe temperatures',short:'Probes',unit:'\u00b0C',dec:2,icon:'i-temp',cls:'temp',diag:true,
+        series:[{k:'p1',label:'Probe 1'},{k:'p2',label:'Probe 2'},{k:'p3',label:'Probe 3'}]}],
+     combo:{axes:[{id:'y1',title:'Gases (ppm)',unit:'ppm',side:'left'},
+                  {id:'y2',title:'O\u2082 (%Vol)',unit:'%Vol',side:'right'},
+                  {id:'y3',title:'Temperature (\u00b0C)',unit:'\u00b0C',side:'right'}],
+            series:[{k:'co',short:'CO',axis:'y1'},{k:'ch4m',short:'CH\u2084',axis:'y1'},
+                    {k:'co2',short:'CO\u2082',axis:'y1'},{k:'etoh',short:'EtOH',axis:'y1'},
+                    {k:'voc',short:'VOC',axis:'y1'},{k:'o2',short:'O\u2082',axis:'y2'},
+                    {k:'temp',short:'Temp',axis:'y3'}]}}
+  ], tz_offset_hours:7};
+}
+function demoRows(roomId){
+  if(DEMO_CACHE[roomId]) return DEMO_CACHE[roomId];
+  var out=[];
+  if(roomId==='gas'){
+    var end=Date.now(), n=2600, step=45000, t0=end-n*step, seed=3;
+    var rnd=function(){ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; };
+    for(var i=0;i<n;i++){
+      var p=i/n, t=t0+i*step;
+      out.push({t:t, valve:(i%3)+1, round:Math.floor(i/3),
+        co:  Math.max(0, 0.6+Math.sin(p*31)*0.5+rnd()*0.4),
+        ch4l:0,
+        ch4m:Math.max(0, 0.4+Math.sin(p*17+1)*0.35+rnd()*0.3),
+        o2:  19.8+Math.sin(p*9)*0.12+rnd()*0.06,
+        co2: 33+Math.sin(p*13)*4+rnd()*2,
+        etoh:800+Math.sin(p*7)*120+rnd()*60,
+        voc: null,
+        temp:23.5+Math.sin(p*5)*0.9+rnd()*0.2,
+        rh:  47+Math.sin(p*6+2)*2.2+rnd()*0.5,
+        flow:1.85+Math.sin(p*23)*0.18+rnd()*0.08,
+        p1:21.56+Math.sin(p*4)*0.4, p2:21.75+Math.sin(p*4+1)*0.4, p3:21.63+Math.sin(p*4+2)*0.4});
     }
+  }else{
+    var b=DEMO_SRC, s0=b[0][0], span=b[b.length-1][0]-s0+90000, cycles=14, now=Date.now();
+    for(var c=cycles-1;c>=0;c--){
+      for(var j=0;j<b.length;j++){
+        var r=b[j], tt=now-(c*span)-(s0+span-r[0]);
+        out.push({t:tt, T_in:r[1], H_in:r[2], V_in:r[3], T_out:r[4], H_out:r[5], V_out:r[6]});
+      }
+    }
+    out.sort(function(x,y){return x.t-y.t;});
   }
-  out.sort(function(a,b){return a.t-b.t;});
-  DEMO_ROWS=out; return out;
+  DEMO_CACHE[roomId]=out; return out;
 }
 function demoThin(a,n){ if(a.length<=n) return a; var o=[],st=(a.length-1)/(n-1);
   for(var i=0;i<n;i++) o.push(a[Math.round(i*st)]); return o; }
 function demoAPI(path){
-  var rows=demoRows(), u=new URL(path,'http://demo.local');
+  var u=new URL(path,'http://demo.local');
+  if(u.pathname==='/api/rooms') return Promise.resolve(demoRooms());
+  var rid=u.searchParams.get('room')||'coolroom';
+  var rows=demoRows(rid);
   if(u.pathname==='/api/days'){
     var seen={}; rows.forEach(function(r){ var d=new Date(r.t);
       seen[d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)]=1; });
-    return Promise.resolve({days:Object.keys(seen).sort()});
+    return Promise.resolve({room:rid, days:Object.keys(seen).sort()});
   }
-  if(u.pathname==='/api/latest') return Promise.resolve({reading:rows[rows.length-1]});
+  if(u.pathname==='/api/latest')
+    return Promise.resolve({room:rid, reading:rows[rows.length-1]});
   var f=+u.searchParams.get('from'), t=+u.searchParams.get('to'), mx=+u.searchParams.get('max')||2000;
   var sel=rows.filter(function(r){return r.t>=f&&r.t<=t;});
-  return Promise.resolve({readings:demoThin(sel,mx), total_in_range:sel.length});
+  return Promise.resolve({room:rid, readings:demoThin(sel,mx), total_in_range:sel.length});
 }
 (function(){
 'use strict';
 
 /* ================= definitions ================= */
-var DEFS=[
-  {k:'T_in', n:'Temperature',  side:'in',  unit:'°C',  dec:1},
-  {k:'H_in', n:'Humidity',     side:'in',  unit:'%RH', dec:1},
-  {k:'V_in', n:'Air velocity', side:'in',  unit:'m/s', dec:2},
-  {k:'T_out',n:'Temperature',  side:'out', unit:'°C',  dec:1},
-  {k:'H_out',n:'Humidity',     side:'out', unit:'%RH', dec:1},
-  {k:'V_out',n:'Air velocity', side:'out', unit:'m/s', dec:2}
-];
-var KEYS=DEFS.map(function(d){return d.k;});
-var GROUPS=[
-  {id:'T',title:'Temperature', short:'Temp',unit:'°C', a:'T_in',b:'T_out',dec:1,cls:'temp',icon:'i-temp'},
-  {id:'H',title:'Humidity',    short:'Hum', unit:'%RH',a:'H_in',b:'H_out',dec:1,cls:'hum', icon:'i-drop'},
-  {id:'V',title:'Air velocity',short:'Vel', unit:'m/s',a:'V_in',b:'V_out',dec:2,cls:'vel', icon:'i-wind'}
-];
+/* Measurement definitions are no longer hardcoded: they arrive from
+   /api/rooms, so adding a sensor means editing the API, not this page. */
+var ROOMS=[], ROOM=null;
+var DEFS=[], KEYS=[], GROUPS=[], COMBO=[], COMBO_AXES=[];
+
+/* colours for the series inside one chart, in order */
+var SER_PAL=['in','out','accent','ic-vel','ic-hum','ic-temp'];
+
+function applyRoom(room){
+  ROOM=room;
+  DEFS=(room.channels||[]).filter(function(c){ return !c.meta; })
+        .map(function(c){ return {k:c.key, n:c.label, unit:c.unit, dec:c.dec,
+                                  diag:!!c.diag}; });
+  KEYS=DEFS.map(function(d){ return d.k; });
+  GROUPS=(room.groups||[]).map(function(g){
+    var ser=(g.series||[]).slice();
+    return {id:g.id, title:g.title, short:g.short||g.title, unit:g.unit,
+            dec:(g.dec==null?2:g.dec), cls:g.cls||'temp', icon:g.icon||'i-chart',
+            diag:!!g.diag, paired:!!g.paired, series:ser,
+            a:ser[0]&&ser[0].k, b:ser[1]&&ser[1].k};
+  });
+  var cb=room.combo||{series:[],axes:[]};
+  COMBO_AXES=(cb.axes||[]).map(function(a){
+    return {id:a.id, title:a.title, unit:a.unit, side:a.side||'right'};
+  });
+  COMBO=(cb.series||[]).map(function(x){
+    var d=DEFS.filter(function(y){return y.k===x.k;})[0]||{};
+    return {k:x.k, label:x.label||d.n||x.k, short:x.short||x.label||x.k,
+            axis:x.axis||(COMBO_AXES[0]&&COMBO_AXES[0].id),
+            unit:d.unit||'', dec:(d.dec==null?2:d.dec)};
+  });
+}
+function visibleGroups(){
+  return S.diag ? GROUPS : GROUPS.filter(function(g){ return !g.diag; });
+}
+function groupById(id){
+  for(var i=0;i<GROUPS.length;i++) if(GROUPS[i].id===id) return GROUPS[i];
+  return null;
+}
 var SPANS=[
   {id:'15m',label:'Last 15 minutes',ms:15*60e3},
   {id:'30m',label:'Last 30 minutes',ms:30*60e3},
@@ -1025,7 +1139,7 @@ var PAGES=['overview','detail','export','settings'];
 var S={
   page:'overview',
   rows:[], ovRows:[], total:0, cur:{}, days:[],
-  meas:'all', cmp:'none',
+  meas:'all', cmp:'none', room:null, diag:false,
   span:'1h', date:'live', from:0, to:24,
   charts:{}, ovChart:null, timer:null, busy:false,
   zoomed:false, zsync:false,
@@ -1631,6 +1745,8 @@ window.addEventListener('hashchange',function(){ go(location.hash.slice(1)||'ove
 
 /* ================= api ================= */
 async function getJSON(path){
+  if(ROOM && path.indexOf('/api/')===0 && path.indexOf('/api/rooms')!==0)
+    path += (path.indexOf('?')>=0?'&':'?')+'room='+encodeURIComponent(ROOM.id);
   if(DEMO) return demoAPI(path);
   var r=await fetch(apiBase()+path,{cache:'no-store'});
   if(!r.ok) throw new Error('HTTP '+r.status);
@@ -1712,35 +1828,27 @@ function chartOpts(g){
     }
   };
 }
-/* combined chart: three y axes, one per measurement */
+/* combined chart: one y axis per unit group, declared by the room */
 function narrow(){ return (window.innerWidth||1200)<700; }
 function comboOpts(){
   var nw=narrow();
   var o=chartOpts({id:'combo',dec:2,unit:'',title:'All measurements'});
-  o.plugins.legend={display:false,position:'top',align:'end',
-    labels:{boxWidth:22,boxHeight:2,usePointStyle:false,
-            color:TH.tx2,font:{size:10.5*CH.fsk,weight:'600'},padding:11,
-            generateLabels:function(c){
-              return c.data.datasets.map(function(d,i){
-                return {text:d.short||d.label, strokeStyle:d.borderColor,
-                        fillStyle:'rgba(0,0,0,0)', lineWidth:2.2,
-                        lineDash:(d.borderDash&&d.borderDash.length)?[4,3]:[],
-                        hidden:!c.isDatasetVisible(i), datasetIndex:i};
-              });
-            }}};
+  o.plugins.legend={display:false};
   o.plugins.tooltip.callbacks.label=function(c){
     var u=c.dataset.unit||'', d=c.dataset.dec==null?1:c.dataset.dec;
-    return c.dataset.label+': '+fmt(c.parsed.y,d)+' '+u;};
+    return c.dataset.label+': '+fmt(c.parsed.y,d)+(u?' '+u:'');};
   delete o.scales.y;
-  o.scales.yT={type:'linear',position:'left',beginAtZero:!!CH.zero,
-    title:{display:true,text:nw?'°C':'Temperature (°C)',color:seriesOf('T_in').c,font:titleFont()},
-    grid:{color:gridClr('y')},ticks:Object.assign(yTicks(1),{color:seriesOf('T_in').c})};
-  o.scales.yH={type:'linear',position:'right',beginAtZero:!!CH.zero,
-    title:{display:true,text:nw?'%RH':'Humidity (%RH)',color:seriesOf('H_in').c,font:titleFont()},
-    grid:{drawOnChartArea:false,color:gridClr('y')},ticks:Object.assign(yTicks(1),{color:seriesOf('H_in').c})};
-  o.scales.yV={type:'linear',position:'right',beginAtZero:!!CH.zero,
-    title:{display:true,text:nw?'m/s':'Air velocity (m/s)',color:seriesOf('V_in').c,font:titleFont()},
-    grid:{drawOnChartArea:false,color:gridClr('y')},ticks:Object.assign(yTicks(2),{color:seriesOf('V_in').c})};
+  COMBO_AXES.forEach(function(ax,i){
+    var lead=COMBO.filter(function(c){return c.axis===ax.id;})[0];
+    var col=lead?seriesOf(lead.k).c:TH.tick;
+    /* three axis titles will not fit on a phone; the coloured ticks and the
+       legend already say which line belongs to which scale */
+    o.scales[ax.id]={type:'linear', position:ax.side, beginAtZero:!!CH.zero,
+      title:{display:!nw, text:ax.title, color:col, font:titleFont()},
+      grid:{drawOnChartArea:(i===0), color:gridClr('y')},
+      ticks:Object.assign(yTicks(2),{color:col,
+        maxTicksLimit:nw?6:11, font:{size:(nw?9:10)*CH.fsk}})};
+  });
   return o;
 }
 function ds(label,color,dashed,extra){
@@ -1770,13 +1878,17 @@ function cardShell(g,tall,extraLegend){
     '<div class="cv" style="height:'+tall+'px"><canvas id="c-'+g.id+'"></canvas></div>'+
     '<div class="zhint">'+zoomHint()+'</div>';
 }
+function serColor(i){ return TH[SER_PAL[i%SER_PAL.length]]; }
 function buildCharts(){
   var host=$('charts'); host.innerHTML='';
   Object.keys(S.charts).forEach(function(k){ try{S.charts[k].destroy();}catch(e){} });
   S.charts={};
+  if(!GROUPS.length) return;
 
   if(S.meas==='combo'){
-    var g={id:'combo',title:'All measurements',unit:'3 scales',cls:'temp',icon:'i-layers',dec:2};
+    if(!COMBO.length){ host.innerHTML='<div class="card pad"><div class="note">This room has no combined view.</div></div>'; return; }
+    var g={id:'combo',title:'All measurements',unit:String(COMBO_AXES.length)+' scales',
+           cls:'temp',icon:'i-layers',dec:2};
     var card=el('div','card ch');
     card.innerHTML=cardShell(g,chartHeight(true), !CH.legend ? '' :
       COMBO.map(function(c,i){
@@ -1808,20 +1920,25 @@ function buildCharts(){
     return;
   }
 
-  var list = (S.meas==='all') ? GROUPS : GROUPS.filter(function(g){return g.id===S.meas;});
-  var tall = chartHeight(S.meas!=='all');
+  var vis=visibleGroups();
+  var list = (S.meas==='all') ? vis : GROUPS.filter(function(g){return g.id===S.meas;});
+  if(!list.length) list=vis;
+  var tall = chartHeight(list.length===1);
   list.forEach(function(g){
     var card=el('div','card ch');
-    card.innerHTML=cardShell(g,tall, !CH.legend ? '' :
-      '<span><i style="background:var(--in)"></i>Inlet</span>'+
-      '<span><i style="background:var(--out)"></i>Outlet</span>'+
-      '<span id="cmpLg-'+g.id+'" style="display:none"><i class="dash"></i>earlier</span>');
+    var legend = !CH.legend ? '' :
+      g.series.map(function(sr,i){
+        return '<span><i style="background:'+serColor(i)+'"></i>'+sr.label+'</span>';
+      }).join('')+
+      '<span id="cmpLg-'+g.id+'" style="display:none"><i class="dash"></i>earlier</span>';
+    card.innerHTML=cardShell(g,tall,legend);
     host.appendChild(card);
+    var sets=g.series.map(function(sr,i){ return ds(sr.label,serColor(i)); });
+    g.series.forEach(function(sr,i){
+      sets.push(ds(sr.label+' earlier',serColor(i),true));
+    });
     S.charts[g.id]=new Chart($('c-'+g.id),{
-      type:chartKind(),
-      data:{datasets:[ds('Inlet',TH['in']),ds('Outlet',TH.out),
-                      ds('Inlet earlier',TH['in'],true),ds('Outlet earlier',TH.out,true)]},
-      options:chartOpts(g)
+      type:chartKind(), data:{datasets:sets}, options:chartOpts(g)
     });
   });
 }
@@ -1906,14 +2023,17 @@ function statsFor(rows){
 }
 function renderStats(){
   var st=statsFor(S.rows);
-  var show = (S.meas==='all'||S.meas==='combo') ? GROUPS : GROUPS.filter(function(g){return g.id===S.meas;});
+  var show = (S.meas==='all'||S.meas==='combo') ? visibleGroups()
+           : GROUPS.filter(function(g){return g.id===S.meas;});
+  if(!show.length) show=visibleGroups();
   var h='<tr><th>Measurement</th><th>Latest</th><th>Min</th><th>Max</th><th>Average</th><th>Std dev</th><th>Change</th></tr>';
   show.forEach(function(g){
-    [['Inlet',g.a],['Outlet',g.b]].forEach(function(pair){
-      var s=st[pair[1]], d=DEFS.filter(function(x){return x.k===pair[1];})[0];
-      if(!s){ h+='<tr><td>'+g.title+' — '+pair[0]+'</td><td colspan="6" style="color:var(--tx3)">no data</td></tr>'; return; }
+    g.series.forEach(function(sr){
+      var s=st[sr.k], d=DEFS.filter(function(x){return x.k===sr.k;})[0]||{dec:g.dec};
+      var name = g.series.length>1 ? g.title+' \u2014 '+sr.label : g.title;
+      if(!s){ h+='<tr><td>'+name+'</td><td colspan="6" style="color:var(--tx3)">no data</td></tr>'; return; }
       var chg=s.last-s.first;
-      h+='<tr><td>'+g.title+' — '+pair[0]+'</td>'+
+      h+='<tr><td>'+name+'</td>'+
          '<td>'+fmt(s.last,d.dec)+'</td>'+
          '<td>'+fmt(s.min,d.dec)+'</td><td>'+fmt(s.max,d.dec)+'</td>'+
          '<td>'+fmt(s.avg,d.dec)+'</td><td>'+fmt(s.sd,d.dec)+'</td>'+
@@ -1932,22 +2052,27 @@ function chipSet(hostId,key,val){
 }
 function renderOverview(){
   var age=S.cur.t==null?null:Date.now()-S.cur.t;
+  var ttl=$('ovTitle'); if(ttl && ROOM) ttl.textContent=ROOM.short;
   var state=age==null?'down':age<staleMs()?'live':age>6*3600e3?'down':'stale';
   var grid=$('tileGrid');
-  if(!grid.dataset.built){
-    grid.innerHTML=GROUPS.map(function(g){
+  var vis=visibleGroups();
+  if(grid.dataset.built!==ROOM.id+'|'+(S.diag?'d':'n')){
+    grid.innerHTML=vis.map(function(g){
       return '<button class="tile '+g.cls+'" data-open="'+g.id+'">'+
         '<div class="tile-top"><span class="tile-ic"><svg class="ic"><use href="#'+g.icon+'"/></svg></span>'+
-        '<span class="nm">'+g.title+'</span><span class="delta" id="dl-'+g.id+'">—</span></div>'+
+        '<span class="nm">'+g.title+'</span><span class="delta" id="dl-'+g.id+'">\u2014</span></div>'+
         '<div class="vals">'+
-          '<div class="vcol"><div class="vk">Inlet</div><div class="vv" id="vi-'+g.id+'">—</div></div>'+
-          '<div class="vcol"><div class="vk">Outlet</div><div class="vv" id="vo-'+g.id+'">—</div></div>'+
+          g.series.map(function(sr,i){
+            return '<div class="vcol"><div class="vk">'+sr.label+'</div>'+
+                   '<div class="vv" id="vv-'+g.id+'-'+i+'">\u2014</div></div>';
+          }).join('')+
         '</div>'+
         '<div class="tspark"><canvas id="sp-'+g.id+'"></canvas></div>'+
         '<div class="tile-f">last 6 hours<span class="go">Open'+
         '<svg class="ic sm" style="width:14px;height:14px"><use href="#i-arrow"/></svg></span></div></button>';
     }).join('');
-    grid.dataset.built='1';
+    grid.dataset.built=ROOM.id+'|'+(S.diag?'d':'n');
+    if(S.sparks){ Object.keys(S.sparks).forEach(function(k){ try{S.sparks[k].destroy();}catch(e){} }); S.sparks=null; }
     Array.prototype.forEach.call(grid.querySelectorAll('[data-open]'),function(b){
       b.onclick=function(){
         S.meas=b.dataset.open; S.zoomed=false;
@@ -1955,12 +2080,21 @@ function renderOverview(){
       };
     });
   }
-  GROUPS.forEach(function(g){
-    var vi=S.cur[g.a], vo=S.cur[g.b];
-    $('vi-'+g.id).innerHTML=fmt(vi,g.dec)+'<u>'+g.unit+'</u>';
-    $('vo-'+g.id).innerHTML=fmt(vo,g.dec)+'<u>'+g.unit+'</u>';
-    var d=(vi==null||vo==null)?null:vo-vi;
-    $('dl-'+g.id).textContent = d==null?'—':'Δ '+(d>0?'+':'')+fmt(d,g.dec);
+  vis.forEach(function(g){
+    g.series.forEach(function(sr,i){
+      var e=$('vv-'+g.id+'-'+i);
+      if(e) e.innerHTML=fmt(S.cur[sr.k],g.dec)+'<u>'+g.unit+'</u>';
+    });
+    var dl=$('dl-'+g.id);
+    if(dl){
+      if(g.series.length===2){
+        var va=S.cur[g.series[0].k], vb=S.cur[g.series[1].k];
+        var d=(va==null||vb==null)?null:vb-va;
+        dl.textContent = d==null?'\u2014':'\u0394 '+(d>0?'+':'')+fmt(d,g.dec);
+      } else {
+        dl.textContent = g.unit || '';
+      }
+    }
   });
 
   $('ovSub').textContent = age==null ? 'No readings received yet.'
@@ -1975,10 +2109,10 @@ function renderOverview(){
     : state==='live' ? 'Readings arriving normally.'
     : 'Last reading was '+fmtDT(S.cur.t,false)+'.';
 
-  $('miniGrid').innerHTML=GROUPS.map(function(g){
-    return '<div class="minibox"><div class="k">'+g.short+' in</div><div class="v">'+
-           fmt(S.cur[g.a],g.dec)+'</div></div>';
-  }).join('')+'<div class="minibox"><div class="k">Readings</div><div class="v" id="miniN">—</div></div>';
+  $('miniGrid').innerHTML=vis.slice(0,5).map(function(g){
+    return '<div class="minibox"><div class="k">'+g.short+'</div><div class="v">'+
+           fmt(S.cur[g.series[0].k],g.dec)+'</div></div>';
+  }).join('')+'<div class="minibox"><div class="k">Readings</div><div class="v" id="miniN">\u2014</div></div>';
 }
 
 function renderOvChart(){
@@ -1986,13 +2120,13 @@ function renderOvChart(){
   var src=S.ovRows.length?S.ovRows:S.rows;
   var pts=src.filter(function(r){return r.t>=lo;});
   S.sparks=S.sparks||{};
-  GROUPS.forEach(function(g){
+  visibleGroups().forEach(function(g){
     var cv=$('sp-'+g.id); if(!cv) return;
     if(!S.sparks[g.id]){
       S.sparks[g.id]=new Chart(cv,{type:'line',
-        data:{datasets:[
-          {data:[],borderColor:TH['in'],borderWidth:1.8,pointRadius:0,tension:.35,fill:false},
-          {data:[],borderColor:TH.out,borderWidth:1.8,pointRadius:0,tension:.35,fill:false}]},
+        data:{datasets:g.series.map(function(sr,i){
+          return {data:[],borderColor:serColor(i),borderWidth:1.8,pointRadius:0,tension:.35,fill:false};
+        })},
         options:{responsive:true,maintainAspectRatio:false,animation:false,
           plugins:{legend:{display:false},tooltip:{enabled:false},
                    zoom:{zoom:{wheel:{enabled:false}},pan:{enabled:false}}},
@@ -2000,8 +2134,9 @@ function renderOvChart(){
     }
     var c=S.sparks[g.id];
     c.options.scales.x.min=lo; c.options.scales.x.max=hi;
-    c.data.datasets[0].data=pts.map(function(r){return {x:r.t,y:r[g.a]};});
-    c.data.datasets[1].data=pts.map(function(r){return {x:r.t,y:r[g.b]};});
+    g.series.forEach(function(sr,i){
+      if(c.data.datasets[i]) c.data.datasets[i].data=pts.map(function(r){return {x:r.t,y:r[sr.k]};});
+    });
     c.update('none');
   });
 
@@ -2009,9 +2144,9 @@ function renderOvChart(){
   var today=src.filter(function(r){return r.t>=mid.getTime();});
   var st=statsFor(today);
   var h='<tr><th>Sensor</th><th>Latest</th><th>Min</th><th>Max</th><th>Average</th></tr>';
-  DEFS.forEach(function(d){
+  DEFS.filter(function(d){ return S.diag||!d.diag; }).forEach(function(d){
     var s=st[d.k];
-    h+='<tr><td>'+d.n+' — '+(d.side==='in'?'inlet':'outlet')+'</td>'+
+    h+='<tr><td>'+d.n+'</td>'+
       (s?'<td>'+fmt(s.last,d.dec)+' '+d.unit+'</td><td>'+fmt(s.min,d.dec)+'</td><td>'+
          fmt(s.max,d.dec)+'</td><td>'+fmt(s.avg,d.dec)+'</td>'
         :'<td colspan="4" style="color:var(--tx3)">no readings today</td>')+'</tr>';
@@ -2019,10 +2154,95 @@ function renderOvChart(){
   $('todayTable').innerHTML=h;
 
   if($('miniN')) $('miniN').textContent=today.length;
-  $('hLast').textContent = S.cur.t?fmtT(S.cur.t):'—';
+  $('hLast').textContent = S.cur.t?fmtT(S.cur.t):'\u2014';
   $('hToday').textContent = today.length;
   $('hDays').textContent = S.days.length;
-  $('hGap').textContent = S.cur.t?ago(S.cur.t).replace(' ago',''):'—';
+  $('hGap').textContent = S.cur.t?ago(S.cur.t).replace(' ago',''):'\u2014';
+}
+
+/* ================= rooms ================= */
+async function loadRooms(){
+  var d;
+  try{
+    d=await getJSON('/api/rooms');
+  }catch(e){
+    /* An older API on the server, or this page deployed ahead of it.
+       Fall back to the cool room so the dashboard still works. */
+    log('No room list from the server \u2014 showing the cool room only','w');
+    d={rooms:[demoRooms().rooms[0]]};
+  }
+  ROOMS=(d.rooms||[]).filter(function(r){ return r.available!==false; });
+  if(!ROOMS.length) throw new Error('the server reports no rooms');
+  var want=ROOMS.filter(function(r){ return r.id===S.room; })[0];
+  applyRoom(want||ROOMS[0]);
+  S.room=ROOM.id;
+  buildRoomChips();
+  buildMeasChips();
+}
+function buildRoomChips(){
+  var host=$('roomChips'); if(!host) return;
+  if(ROOMS.length<2){ host.style.display='none'; return; }
+  host.style.display='';
+  host.innerHTML=ROOMS.map(function(r){
+    return '<button class="chip'+(r.id===ROOM.id?' on':'')+'" data-room="'+r.id+'">'+
+      '<span class="cic"><svg class="ic sm"><use href="#'+
+      (r.id==='coolroom'?'i-home':'i-gas')+'"/></svg></span>'+r.short+'</button>';
+  }).join('');
+  Array.prototype.forEach.call(host.children,function(b){
+    b.onclick=function(){ switchRoom(b.dataset.room); };
+  });
+}
+function buildMeasChips(){
+  var host=$('measChips'); if(!host) return;
+  var vis=visibleGroups();
+  var h='<button class="chip" data-m="all"><span class="cic"><svg class="ic sm">'+
+        '<use href="#i-chart"/></svg></span>All</button>';
+  h+=vis.map(function(g){
+    return '<button class="chip" data-m="'+g.id+'"><span class="cic"><svg class="ic sm">'+
+      '<use href="#'+g.icon+'"/></svg></span>'+g.title+'</button>';
+  }).join('');
+  if(COMBO.length)
+    h+='<button class="chip" data-m="combo"><span class="cic"><svg class="ic sm">'+
+       '<use href="#i-layers"/></svg></span>Combined</button>';
+  if(GROUPS.some(function(g){return g.diag;}))
+    h+='<button class="chip alt'+(S.diag?' on':'')+'" data-diag="1">'+
+       '<span class="cic"><svg class="ic sm"><use href="#i-sliders"/></svg></span>'+
+       (S.diag?'Hide diagnostics':'Diagnostics')+'</button>';
+  host.innerHTML=h;
+  var ids=vis.map(function(g){return g.id;}).concat(['all','combo']);
+  if(ids.indexOf(S.meas)<0) S.meas='all';
+  Array.prototype.forEach.call(host.children,function(b){
+    if(b.dataset.diag){
+      b.onclick=function(){
+        S.diag=!S.diag;
+        var g=$('tileGrid'); if(g) g.dataset.built='';
+        buildMeasChips(); buildCharts(); save(); refresh();
+      };
+      return;
+    }
+    b.onclick=function(){
+      S.meas=b.dataset.m; S.zoomed=false;
+      chipSet('measChips','m',S.meas); buildCharts(); save(); refresh();
+    };
+  });
+  chipSet('measChips','m',S.meas);
+}
+async function switchRoom(id){
+  var r=ROOMS.filter(function(x){ return x.id===id; })[0];
+  if(!r || (ROOM && r.id===ROOM.id)) return;
+  applyRoom(r); S.room=r.id;
+  S.zoomed=false; S.zlo=null; S.zhi=null;
+  S.rows=[]; S.ovRows=[]; S.cur={}; S.days=[];
+  if(S.sparks){ Object.keys(S.sparks).forEach(function(k){ try{S.sparks[k].destroy();}catch(e){} }); S.sparks=null; }
+  var g=$('tileGrid'); if(g){ g.dataset.built=''; g.innerHTML=''; }
+  buildRoomChips(); buildMeasChips(); buildCharts();
+  bootSeries();                      /* the line settings belong to this room */
+  drawChPrevSoon();
+  setTx('roomTx', ROOM.name);
+  save();
+  await loadDays();
+  await refresh();
+  log('Switched to '+ROOM.name,'s');
 }
 
 /* ================= data loading ================= */
@@ -2096,16 +2316,18 @@ async function renderDetail(w){
       cc.update('none');
     }
   } else {
-  GROUPS.forEach(function(g){
-    var ch=S.charts[g.id]; if(!ch) return;
-    if(!S.zoomed){ ch.options.scales.x.min=w.from; ch.options.scales.x.max=w.to; }
-    ch.data.datasets[0].data=S.rows.map(function(r){return {x:r.t,y:r[g.a]};});
-    ch.data.datasets[1].data=S.rows.map(function(r){return {x:r.t,y:r[g.b]};});
-    ch.data.datasets[2].data=cmpRows?cmpRows.map(function(r){return {x:r.t,y:r[g.a]};}):[];
-    ch.data.datasets[3].data=cmpRows?cmpRows.map(function(r){return {x:r.t,y:r[g.b]};}):[];
-    var lg=$('cmpLg-'+g.id); if(lg) lg.style.display=(cmpRows&&cmpRows.length)?'':'none';
-    ch.update('none');
-  });
+    GROUPS.forEach(function(g){
+      var ch=S.charts[g.id]; if(!ch) return;
+      if(!S.zoomed){ ch.options.scales.x.min=w.from; ch.options.scales.x.max=w.to; }
+      var n=g.series.length;
+      g.series.forEach(function(sr,i){
+        ch.data.datasets[i].data=S.rows.map(function(r){return {x:r.t,y:r[sr.k]};});
+        if(ch.data.datasets[n+i])
+          ch.data.datasets[n+i].data=cmpRows?cmpRows.map(function(r){return {x:r.t,y:r[sr.k]};}):[];
+      });
+      var lg=$('cmpLg-'+g.id); if(lg) lg.style.display=(cmpRows&&cmpRows.length)?'':'none';
+      ch.update('none');
+    });
   }
   stampSpans();
   renderStats();
@@ -2118,7 +2340,7 @@ async function renderDetail(w){
     note+=', '+fmtDT(S.rows[0].t)+' to '+fmtDT(S.rows[S.rows.length-1].t)+'.';
   }
   if(S.meas==='combo' && S.cmp!=='none'){
-    note += ' The earlier-period overlay is turned off on the combined chart — six lines plus an overlay is unreadable.';
+    note += ' The earlier-period overlay is turned off on the combined chart — that many lines plus an overlay is unreadable.';
   } else if(S.cmp!=='none'){
     note += (cmpRows && cmpRows.length)
       ? ' Dashed lines are '+(S.cmp==='1'?'the previous day':'the same period last week')+'.'
@@ -2262,13 +2484,17 @@ function renderChartPNG(g,rows,from,to){
     var whiteBg={id:'whiteBg',beforeDraw:function(c){
       var x=c.ctx; x.save(); x.globalCompositeOperation='destination-over';
       x.fillStyle='#ffffff'; x.fillRect(0,0,c.width,c.height); x.restore();}};
+    var PNGPAL=['#1f6feb','#e8710a','#1a7f37','#8250df','#cf222e','#57606a'];
     var ch=new Chart(cv,{
       type:'line', plugins:[whiteBg],
-      data:{datasets:[
-        {label:'Inlet',data:rows.map(function(r){return{x:r.t,y:r[g.a]};}),borderColor:'#1f6feb',
-         backgroundColor:'rgba(31,111,235,0.10)',borderWidth:2,pointRadius:0,tension:.3,fill:true,spanGaps:true},
-        {label:'Outlet',data:rows.map(function(r){return{x:r.t,y:r[g.b]};}),borderColor:'#e8710a',
-         backgroundColor:'rgba(232,113,10,0.10)',borderWidth:2,pointRadius:0,tension:.3,fill:true,spanGaps:true}]},
+      data:{datasets:g.series.map(function(sr,i){
+        var col=PNGPAL[i%PNGPAL.length];
+        return {label:sr.label,
+                data:rows.map(function(r){return{x:r.t,y:r[sr.k]};}),
+                borderColor:col, backgroundColor:hexA(col,0.10),
+                borderWidth:2,pointRadius:0,tension:.3,
+                fill:g.series.length<=2, spanGaps:true};
+      })},
       options:{responsive:false,animation:false,devicePixelRatio:2,layout:{padding:6},
         plugins:{legend:{display:true,position:'top',align:'end',labels:{boxWidth:12,font:{size:11},color:'#333'}},
           title:{display:true,text:g.title+' ('+g.unit+')',align:'start',
@@ -2280,7 +2506,7 @@ function renderChartPNG(g,rows,from,to){
                    callback:function(v){return makeFmt(to-from)(v);}}},
           y:{title:{display:true,text:g.title+' ('+g.unit+')',font:{size:11},color:'#444'},
             grid:{color:'#e6e6e6'},ticks:{font:{size:10},color:'#444',
-            callback:function(v,i,t){var st=(t&&t.length>1)?Math.abs(t[1].value-t[0].value):1;var dd=Math.min(3,Math.max(g.dec,Math.ceil(-Math.log10(st)-1e-9)));return Number(v).toFixed(dd);}}}}}
+            callback:function(v,i,tk){var st=(tk&&tk.length>1)?Math.abs(tk[1].value-tk[0].value):1;var dd=Math.min(3,Math.max(g.dec,Math.ceil(-Math.log10(st)-1e-9)));return Number(v).toFixed(dd);}}}}}
     });
     setTimeout(function(){ var u=cv.toDataURL('image/png'); ch.destroy(); holder.remove(); resolve(u); },60);
   });
@@ -2292,17 +2518,20 @@ async function buildWorkbook(rows,from,to,withCharts){
   var headFill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1F3864'}};
   var headFont={bold:true,color:{argb:'FFFFFFFF'}};
 
+  var cols=DEFS.filter(function(d){ return S.diag||!d.diag; });
+  var title=ROOM?ROOM.name:'Sensor';
+
   if(withCharts){
     var cs=wb.addWorksheet('Charts',{views:[{showGridLines:false}]});
-    cs.getCell('A1').value='Cool Room Sensor Report';
+    cs.getCell('A1').value=title+' report';
     cs.getCell('A1').font={size:16,bold:true,color:{argb:'FF1F3864'}};
     cs.getCell('A2').value=fmtDT(from,false)+'  to  '+fmtDT(to,false)+
-      '   ·   '+rows.length+' readings   ·   local time (24h)';
+      '   \u00b7   '+rows.length+' rows   \u00b7   local time (24h)';
     cs.getCell('A2').font={size:10,color:{argb:'FF595959'}};
     cs.getColumn(1).width=12;
-    var row=4;
-    for(var i=0;i<GROUPS.length;i++){
-      var png=await renderChartPNG(GROUPS[i],rows,from,to);
+    var row=4, gs=visibleGroups();
+    for(var i=0;i<gs.length;i++){
+      var png=await renderChartPNG(gs[i],rows,from,to);
       var id=wb.addImage({base64:png.split(',')[1],extension:'png'});
       cs.addImage(id,{tl:{col:0.2,row:row-1},ext:{width:900,height:270}});
       row+=15;
@@ -2310,30 +2539,35 @@ async function buildWorkbook(rows,from,to,withCharts){
   }
 
   var ws=wb.addWorksheet('Data',{views:[{state:'frozen',ySplit:1}]});
-  ws.columns=[
-    {header:'Date',key:'d',width:12},{header:'Time',key:'t',width:10},
-    {header:'T_in (°C)',key:'ti',width:11,style:{numFmt:'0.00'}},
-    {header:'H_in (%RH)',key:'hi',width:12,style:{numFmt:'0.00'}},
-    {header:'V_in (m/s)',key:'vi',width:11,style:{numFmt:'0.00'}},
-    {header:'T_out (°C)',key:'to',width:12,style:{numFmt:'0.00'}},
-    {header:'H_out (%RH)',key:'ho',width:13,style:{numFmt:'0.00'}},
-    {header:'V_out (m/s)',key:'vo',width:12,style:{numFmt:'0.00'}},
-    {header:'dT (°C)',key:'dt',width:10,style:{numFmt:'0.00'}},
-    {header:'dH (%RH)',key:'dh',width:11,style:{numFmt:'0.00'}},
-    {header:'dV (m/s)',key:'dv',width:10,style:{numFmt:'0.00'}}];
+  var wcols=[{header:'Date',key:'d',width:12},{header:'Time',key:'t',width:10}];
+  cols.forEach(function(d){
+    wcols.push({header:d.n+(d.unit?' ('+d.unit+')':''), key:'c_'+d.k,
+                width:Math.max(11,Math.min(22,d.n.length+4)),
+                style:{numFmt:d.dec>=2?'0.00':'0.0'}});
+  });
+  /* the cool room's inlet/outlet differences are genuinely useful; other
+     rooms have no pairs, so nothing is added */
+  var pairs=GROUPS.filter(function(g){ return g.paired && g.series.length===2; });
+  pairs.forEach(function(g){
+    wcols.push({header:'\u0394 '+g.short+' ('+g.unit+')', key:'p_'+g.id,
+                width:12, style:{numFmt:'0.000'}});
+  });
+  ws.columns=wcols;
   ws.getRow(1).font=headFont; ws.getRow(1).fill=headFill;
   ws.getRow(1).alignment={horizontal:'center',vertical:'middle',wrapText:true};
-  ws.autoFilter={from:{row:1,column:1},to:{row:1,column:11}};
+  ws.autoFilter={from:{row:1,column:1},to:{row:1,column:wcols.length}};
   rows.forEach(function(r){
-    var d=new Date(r.t);
-    var sub=function(a,b){return (r[a]==null||r[b]==null)?null:+(r[a]-r[b]).toFixed(3);};
-    ws.addRow({d:fmtDate(d),t:fmtTime(d),ti:r.T_in,hi:r.H_in,vi:r.V_in,
-      to:r.T_out,ho:r.H_out,vo:r.V_out,
-      dt:sub('T_out','T_in'),dh:sub('H_out','H_in'),dv:sub('V_out','V_in')});
+    var d=new Date(r.t), o={d:fmtDate(d),t:fmtTime(d)};
+    cols.forEach(function(c){ o['c_'+c.k]=(r[c.k]==null?null:r[c.k]); });
+    pairs.forEach(function(g){
+      var a=r[g.series[0].k], b=r[g.series[1].k];
+      o['p_'+g.id]=(a==null||b==null)?null:+(b-a).toFixed(3);
+    });
+    ws.addRow(o);
   });
 
   var sm=wb.addWorksheet('Summary',{views:[{showGridLines:false}]});
-  sm.getCell('A1').value='Summary';
+  sm.getCell('A1').value='Summary \u2014 '+title;
   sm.getCell('A1').font={size:14,bold:true,color:{argb:'FF1F3864'}};
   sm.getCell('A2').value=fmtDT(from,false)+'  to  '+fmtDT(to,false);
   sm.getCell('A2').font={size:10,color:{argb:'FF595959'}};
@@ -2341,13 +2575,13 @@ async function buildWorkbook(rows,from,to,withCharts){
   var hr=sm.addRow(['Measurement','Min','Max','Average','Std dev','Unit']);
   hr.font=headFont; hr.fill=headFill; hr.alignment={horizontal:'center'};
   var st=statsFor(rows);
-  DEFS.forEach(function(def){
+  cols.forEach(function(def){
     var s=st[def.k];
-    sm.addRow([def.n+' ('+(def.side==='in'?'inlet':'outlet')+')',
+    sm.addRow([def.n,
       s?+s.min.toFixed(2):null, s?+s.max.toFixed(2):null,
       s?+s.avg.toFixed(2):null, s?+s.sd.toFixed(3):null, def.unit]);
   });
-  sm.getColumn(1).width=26;
+  sm.getColumn(1).width=28;
   [2,3,4,5].forEach(function(c){ sm.getColumn(c).width=10;
     sm.getColumn(c).numFmt='0.00'; sm.getColumn(c).alignment={horizontal:'center'}; });
   sm.getColumn(6).width=8;
@@ -2360,23 +2594,32 @@ function saveBlob(blob,name){
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
 }
+function exportName(ext){
+  var slug=(ROOM?ROOM.short:'Sensor').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  return slug+'_'+fmtDate(new Date())+'_'+fmtTime(new Date()).replace(/:/g,'-')+'.'+ext;
+}
 function exportCSV(rows){
-  var head=['Date','Time','T_in (°C)','H_in (%RH)','V_in (m/s)','T_out (°C)','H_out (%RH)',
-            'V_out (m/s)','dT (°C)','dH (%RH)','dV (m/s)'];
-  var lines=[head.join(',')];
+  var cols=DEFS.filter(function(d){ return S.diag||!d.diag; });
+  var pairs=GROUPS.filter(function(g){ return g.paired && g.series.length===2; });
+  var head=['Date','Time'].concat(
+    cols.map(function(d){ return d.n+(d.unit?' ('+d.unit+')':''); }),
+    pairs.map(function(g){ return '\u0394 '+g.short+' ('+g.unit+')'; }));
+  var q=function(s){ s=String(s); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+  var lines=[head.map(q).join(',')];
   rows.forEach(function(r){
     var d=new Date(r.t);
-    var sub=function(a,b){return (r[a]==null||r[b]==null)?'':(r[a]-r[b]).toFixed(3);};
-    lines.push([fmtDate(d),fmtTime(d),
-      r.T_in==null?'':r.T_in, r.H_in==null?'':r.H_in, r.V_in==null?'':r.V_in,
-      r.T_out==null?'':r.T_out, r.H_out==null?'':r.H_out, r.V_out==null?'':r.V_out,
-      sub('T_out','T_in'),sub('H_out','H_in'),sub('V_out','V_in')].join(','));
+    var out=[fmtDate(d),fmtTime(d)];
+    cols.forEach(function(c){ out.push(r[c.k]==null?'':r[c.k]); });
+    pairs.forEach(function(g){
+      var a=r[g.series[0].k], b=r[g.series[1].k];
+      out.push((a==null||b==null)?'':(b-a).toFixed(3));
+    });
+    lines.push(out.join(','));
   });
-  saveBlob(new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),
-           'Cool_Room_'+fmtDate(new Date())+'_'+fmtTime(new Date()).replace(/:/g,'-')+'.csv');
+  saveBlob(new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}), exportName('csv'));
 }
 
-var DEC={}; DEFS.forEach(function(d){ DEC[d.k]=d.dec; });
+function decOf(k){ for(var i=0;i<DEFS.length;i++) if(DEFS[i].k===k) return DEFS[i].dec; return 2; }
 /* Group readings into fixed time buckets for export.
    step = seconds per row; 0 means leave every reading alone. */
 function resampleRows(rows,step,how){
@@ -2390,7 +2633,7 @@ function resampleRows(rows,step,how){
       if(!acc[k].c){ r[k]=null; return; }
       /* one decimal beyond the sensor's own precision: averaging really does
          resolve a little finer, but 25.633333333 implies nonsense */
-      var p=Math.pow(10,(DEC[k]==null?1:DEC[k])+1);
+      var p=Math.pow(10,decOf(k)+1);
       r[k]=Math.round((acc[k].s/acc[k].c)*p)/p;
     });
     out.push(r);
@@ -2454,7 +2697,7 @@ async function doExport(kind){
       var wb=await buildWorkbook(rows,f,t,withCharts);
       var buf=await wb.xlsx.writeBuffer();
       saveBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),
-        'Cool_Room_'+fmtDate(new Date())+'_'+fmtTime(new Date()).replace(/:/g,'-')+'.xlsx');
+        exportName('xlsx'));
       $('exNote').textContent='Exported '+rows.length+' row'+(rows.length===1?'':'s')+' as Excel'+(withCharts?' with charts':'')+shrink+'.';
     }
     log('Exported '+rows.length+' rows ('+kind+(step?', every '+step+' s':'')+')','g');
@@ -2472,7 +2715,7 @@ function save(){
     api:$('api').value, poll:$('poll').value, maxpts:$('maxpts').value,
     stale:$('staleAfter').value, stab:S.stab, meas:S.meas, cmp:S.cmp,
     span:S.span, date:S.date, from:S.from, to:S.to,
-    ch:CH, ty:TY, cs:CS,
+    ch:CH, ty:TY, cs:CS, room:S.room, diag:S.diag,
     exEvery:exEveryStep(), exHow:exEveryHow()})); }catch(e){}
 }
 function load(){
@@ -2491,11 +2734,20 @@ function load(){
     if(typeof c.to==='number') S.to=c.to;
     if(c.ch) Object.keys(CH).forEach(function(k){ if(c.ch[k]!=null) CH[k]=c.ch[k]; });
     if(c.ty) Object.keys(TY).forEach(function(k){ if(c.ty[k]!=null) TY[k]=c.ty[k]; });
+    if(c.room) S.room=c.room;
+    if(typeof c.diag==='boolean') S.diag=c.diag;
     if(c.exEvery!=null && $('exEvery')) $('exEvery').value=String(c.exEvery);
     if(c.exHow && $('exHow')) Array.prototype.forEach.call($('exHow').children,function(b){
       b.classList.toggle('on', b.dataset.v===c.exHow); });
-    if(c.cs) Object.keys(CS).forEach(function(k){
-      if(c.cs[k]){ if(c.cs[k].c) CS[k].c=c.cs[k].c; if(c.cs[k].s) CS[k].s=c.cs[k].s; } });
+    if(c.cs && typeof c.cs==='object') Object.keys(c.cs).forEach(function(rid){
+      var src=c.cs[rid];
+      if(!src||typeof src!=='object') return;
+      CS[rid]=CS[rid]||{};
+      Object.keys(src).forEach(function(k){
+        if(src[k]&&typeof src[k]==='object'&&src[k].c)
+          CS[rid][k]={c:src[k].c, s:src[k].s||'solid'};
+      });
+    });
   }catch(e){}
 }
 function schedule(){
@@ -2518,7 +2770,6 @@ function segWire(hostId, key, onPick){
     b.classList.toggle('on', b.dataset[key]===(key==='m'?S.meas:S.cmp));
   });
 }
-segWire('measChips','m',function(v){ S.meas=v; S.zoomed=false; buildCharts(); save(); refresh(); });
 segWire('cmpSeg','c',function(v){ S.cmp=v; save(); refresh(); });
 
 $('selSpan').onchange=function(){ S.span=this.value; S.zoomed=false; save(); refresh(); };
@@ -2564,42 +2815,43 @@ Array.prototype.forEach.call(document.querySelectorAll('.quick button'),function
 window.addEventListener('resize',function(){ clearTimeout(S.rz);
   S.rz=setTimeout(resizeCharts,180); });
 
-/* ---- combined-chart series definition ---- */
-/* Six solid lines, one colour each: no dashes, because six dashed lines
-   on three scales is unreadable. Colour and style are both adjustable. */
+/* ---- combined-chart line styling, per room ---- */
 var LINE_STYLES=[
-  {id:'solid',  name:'Solid',       dash:[]},
-  {id:'dashed', name:'Dashed',      dash:[7,4]},
-  {id:'dotted', name:'Dotted',      dash:[1.5,3.5]},
-  {id:'dashdot',name:'Dash-dot',    dash:[9,3.5,2,3.5]},
-  {id:'long',   name:'Long dash',   dash:[14,5]}
+  {id:'solid',  name:'Solid',     dash:[]},
+  {id:'dashed', name:'Dashed',    dash:[7,4]},
+  {id:'dotted', name:'Dotted',    dash:[1.5,3.5]},
+  {id:'dashdot',name:'Dash-dot',  dash:[9,3.5,2,3.5]},
+  {id:'long',   name:'Long dash', dash:[14,5]}
 ];
 function styleDash(id){
   for(var i=0;i<LINE_STYLES.length;i++) if(LINE_STYLES[i].id===id) return LINE_STYLES[i].dash;
   return [];
 }
-var COMBO=[
-  {k:'T_in', label:'Temperature — inlet',  short:'Temp in',  axis:'yT', unit:'°C', dec:1},
-  {k:'T_out',label:'Temperature — outlet', short:'Temp out', axis:'yT', unit:'°C', dec:1},
-  {k:'H_in', label:'Humidity — inlet',     short:'Hum in',   axis:'yH', unit:'%RH',     dec:1},
-  {k:'H_out',label:'Humidity — outlet',    short:'Hum out',  axis:'yH', unit:'%RH',     dec:1},
-  {k:'V_in', label:'Air velocity — inlet', short:'Vel in',   axis:'yV', unit:'m/s',     dec:2},
-  {k:'V_out',label:'Air velocity — outlet',short:'Vel out',  axis:'yV', unit:'m/s',     dec:2}
-];
-var CS_DEF={
-  T_in :{c:'#e04f2f', s:'solid'},
-  T_out:{c:'#e08700', s:'solid'},
-  H_in :{c:'#2563eb', s:'solid'},
-  H_out:{c:'#0891b2', s:'solid'},
-  V_in :{c:'#16a34a', s:'solid'},
-  V_out:{c:'#9333ea', s:'solid'}
-};
+/* eight distinguishable line colours, reused in order */
+var COMBO_PAL=['#e04f2f','#e08700','#2563eb','#0891b2','#16a34a','#9333ea','#be185d','#64748b'];
+
+/* CS[roomId][channelKey] = {c:colour, s:style} */
 var CS={};
-function resetSeries(){
-  CS={}; COMBO.forEach(function(c){ CS[c.k]={c:CS_DEF[c.k].c, s:CS_DEF[c.k].s}; });
+function defaultSeries(k,i){ return {c:COMBO_PAL[i%COMBO_PAL.length], s:'solid'}; }
+function ensureSeries(){
+  if(!ROOM) return;
+  var r=CS[ROOM.id]=CS[ROOM.id]||{};
+  COMBO.forEach(function(c,i){
+    if(!r[c.k]) r[c.k]=defaultSeries(c.k,i);
+  });
 }
-resetSeries();
-function seriesOf(k){ return CS[k]||CS_DEF[k]; }
+function resetSeries(){
+  if(!ROOM) return;
+  CS[ROOM.id]={};
+  COMBO.forEach(function(c,i){ CS[ROOM.id][c.k]=defaultSeries(c.k,i); });
+}
+function seriesOf(k){
+  if(!ROOM) return {c:COMBO_PAL[0], s:'solid'};
+  ensureSeries();
+  var i=0;
+  for(var j=0;j<COMBO.length;j++) if(COMBO[j].k===k){ i=j; break; }
+  return (CS[ROOM.id] && CS[ROOM.id][k]) || defaultSeries(k,i);
+}
 
 /* ---- defaults ---- */
 var CH_DEF={type:'line',fill:true,op:13,smooth:true,w:2,pts:0,grid:'both',zero:false,h:'m',legend:true,fsk:1,wheel:'ctrl'};
@@ -2679,6 +2931,11 @@ function applyChartCfg(redraw){
   segOn('chH',CH.h);
   segOn('chLeg',CH.legend?'1':'0');
   var fillRow=$('chOp'); if(fillRow) fillRow.disabled=!chFill();
+  var sub=$('dtSub');
+  if(sub) sub.textContent = (CH.wheel==='off'
+      ? 'Drag to pan, shift+drag to box-zoom.'
+      : (CH.wheel==='ctrl'?'Ctrl + scroll':'Scroll')+' to zoom, drag to pan, shift+drag to box-zoom.')
+    + ' Data reloads to match what you zoom into.';
   if(redraw!==false){ rebuildSoon(); drawChPrevSoon(); }
   save();
 }
@@ -2755,10 +3012,15 @@ function lineSwatch(k){
 function buildSeriesRows(){
   var host=$('seriesRows'); if(!host) return;
   host.innerHTML='';
+  if(!ROOM || !COMBO.length){
+    host.innerHTML='<div class="note">This room has no combined chart.</div>';
+    return;
+  }
+  ensureSeries();
   COMBO.forEach(function(c){
     var cs=seriesOf(c.k);
     var row=el('div','crow');
-    row.innerHTML='<div class="nm"><b>'+c.label+'</b><small>'+c.unit+'</small></div>'+
+    row.innerHTML='<div class="nm"><b>'+c.label+'</b><small>'+(c.unit||'')+'</small></div>'+
       '<span class="lprev" id="lp-'+c.k+'">'+lineSwatch(c.k)+'</span>'+
       '<button type="button" class="cbtn" id="sc-'+c.k+'" aria-label="Colour for '+c.label+'"></button>'+
       '<select class="lsel" id="ss-'+c.k+'">'+
@@ -2769,24 +3031,27 @@ function buildSeriesRows(){
   });
   COMBO.forEach(function(c){
     var btn=$('sc-'+c.k), sel=$('ss-'+c.k);
+    if(!btn||!sel) return;
     btn.style.background=seriesOf(c.k).c;
     btn.addEventListener('click',function(e){
       e.stopPropagation();
       openPicker('series:'+c.k, c.label, btn, {
         value:seriesOf(c.k).c,
         onPick:function(hex){
-          CS[c.k].c=hex; btn.style.background=hex;
+          CS[ROOM.id][c.k].c=hex; btn.style.background=hex;
           $('lp-'+c.k).innerHTML=lineSwatch(c.k);
           save(); rebuildSoon();
         }
       });
     });
     sel.onchange=function(){
-      CS[c.k].s=this.value;
+      CS[ROOM.id][c.k].s=this.value;
       $('lp-'+c.k).innerHTML=lineSwatch(c.k);
       save(); rebuildSoon();
     };
   });
+  var ttl=$('seriesTitle');
+  if(ttl) ttl.textContent=ROOM.short+' \u2014 combined chart lines';
 }
 function syncSeriesUI(){
   COMBO.forEach(function(c){
@@ -2796,29 +3061,16 @@ function syncSeriesUI(){
     if(pv) pv.innerHTML=lineSwatch(c.k);
   });
 }
-function wireSeries(){
-  buildSeriesRows();
-  var r=$('csReset');
-  if(r) r.onclick=function(){ resetSeries(); syncSeriesUI(); save(); rebuildSoon();
-    log('Combined chart lines reset','s'); };
-  var d=$('csDash');
-  if(d) d.onclick=function(){
-    ['T_out','H_out','V_out'].forEach(function(k){ CS[k].s='dashed'; });
-    ['T_in','H_in','V_in'].forEach(function(k){ CS[k].s='solid'; });
-    syncSeriesUI(); save(); rebuildSoon();
-    log('Outlet lines set to dashed','s');
-  };
-}
-
+function bootSeries(){ ensureSeries(); buildSeriesRows(); }
 /* ---- wiring ---- */
 function buildFontGrid(){
   var g=$('fontGrid'); if(!g) return;
   g.innerHTML='';
   FONTS.forEach(function(f){
     var b=el('button','fontb'); b.type='button'; b.dataset.font=f.id;
-    b.innerHTML='<div class="sample" style="font-family:'+f.stack.replace(/"/g,"'")+'">Cool room 24.4°'+
-      '<small>Inlet · Outlet · ห้องเย็น</small></div>'+
-      '<div class="fname">'+f.name+' · '+f.note+'</div>';
+    b.innerHTML='<div class="sample" style="font-family:'+f.stack.replace(/"/g,"'")+'">Cool room 24.4\u00b0'+
+      '<small>Inlet \u00b7 Outlet \u00b7 \u0e2b\u0e49\u0e2d\u0e07\u0e40\u0e22\u0e47\u0e19</small></div>'+
+      '<div class="fname">'+f.name+' \u00b7 '+f.note+'</div>';
     b.onclick=function(){
       TY.font=f.id; loadFont(f); applyType(); save();
       setTimeout(function(){ resizeCharts(); drawChPrev(); },320);
@@ -2874,6 +3126,23 @@ function wireChartCfg(){
     applyChartCfg(); log('Chart settings reset','s');
   };
 }
+function wireSeries(){
+  var r=$('csReset');
+  if(r) r.onclick=function(){ resetSeries(); syncSeriesUI(); save(); rebuildSoon();
+    log('Combined chart lines reset','s'); };
+  var d=$('csDash');
+  if(d) d.onclick=function(){
+    if(!ROOM) return;
+    var half=Math.ceil(COMBO.length/2), any=false;
+    COMBO.forEach(function(c,i){
+      var dashed = ROOM.id==='coolroom' ? (i%2===1) : (i>=half);
+      CS[ROOM.id][c.k].s = dashed?'dashed':'solid';
+      if(dashed) any=true;
+    });
+    syncSeriesUI(); save(); rebuildSoon();
+    log(any?'Alternate lines set to dashed':'Lines reset','s');
+  };
+}
 function bootUI(){
   buildFontGrid();
   wireTypography();
@@ -2896,20 +3165,30 @@ buildPicker('exFrom'); buildPicker('exTo');
 setQuick('today');
 wireLogin();
 
-function startApp(){
+async function startApp(){
   if(S.started) return;
   S.started=true;
   document.body.classList.remove('locked');
   fillAccount();
-  buildCharts();
-  schedule();
   go(location.hash.slice(1)||'overview');
   if(DEMO){ var db=$('demoBar'); if(db) db.style.display='block'; }
   log(DEMO?'Demo mode — showing sample data':'Signed in as '+AUTH.u,'s');
-  loadDays().then(refresh);
+  setInterval(function(){ if(!readAuth()) logout(); },60000);
+  try{
+    await loadRooms();
+  }catch(e){
+    setConn('Cannot reach API','bad');
+    log('Could not load the room list: '+e.message,'e');
+    return;
+  }
+  setTx('roomTx', ROOM.name);
+  bootSeries();
+  buildCharts();
+  schedule();
+  await loadDays();
+  await refresh();
   setTimeout(resizeCharts,80);
   setTimeout(drawChPrev,220);
-  setInterval(function(){ if(!readAuth()) logout(); },60000);
 }
 
 AUTH=readAuth();
