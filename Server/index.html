@@ -42,7 +42,11 @@ svg{display:block}
 .shell{display:flex;min-height:100vh;gap:0}
 .rail{width:var(--rail-w);flex:none;background:var(--rail);border-radius:0 var(--r-card) var(--r-card) 0;
   margin:14px 0;padding:18px 0;display:flex;flex-direction:column;align-items:center;gap:10px;
-  position:sticky;top:14px;height:calc(100vh - 28px);box-shadow:0 2px 14px rgba(22,22,26,.05)}
+  position:sticky;top:14px;height:calc(100vh - 28px);box-shadow:0 2px 14px rgba(22,22,26,.05);
+  /* sticky makes its own stacking context, so the hover labels can only rise
+     above the cards if the rail itself does — any positive value works.
+     Kept under .dtpop (80) and .cpop (120) so neither can be covered. */
+  z-index:50}
 .logo{width:40px;height:40px;border-radius:13px;background:var(--accent);color:var(--accent-tx);
   display:flex;align-items:center;justify-content:center;font-weight:800;font-size:calc(13px*var(--fsk));
   letter-spacing:-.4px;margin-bottom:12px;flex:none}
@@ -586,7 +590,6 @@ body.locked .shell,body.locked .mnav{display:none!important}
                 <select id="roomSel" aria-label="Room"></select>
               </span>
               <span id="ovTitle" class="sronly">Cool room</span>
-              <span>at a glance</span>
             </div>
             <p class="sub" id="ovSub">—</p>
           </div>

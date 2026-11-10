@@ -51,7 +51,9 @@ ROOMS = [
         "short": "Cool room",
         "dir": COOLROOM_DIR,
         # coolroom_2026-11-09.csv
-        "re": re.compile(r"^coolroom_(\d{4}-\d{2}-\d{2})\.csv$"),
+        # anything after the date is allowed: Node-RED adds suffixes of its own
+        # (" (20.30)", "_15") whenever a flow is redeployed
+        "re": re.compile(r"^coolroom_(\d{4}-\d{2}-\d{2}).*\.csv$"),
         "channels": [
             ch("T_in",  "T_in",  "Temperature — inlet",  "°C",  1),
             ch("H_in",  "H_in",  "Humidity — inlet",     "%RH",      1),
@@ -92,8 +94,8 @@ ROOMS = [
         "name": "Mitr Phol gas sensor",
         "short": "Gas sensor",
         "dir": GAS_DIR,
-        # Gas_Sensor-2026-11-09.csv  and  Gas_Sensor-2026-11-09 (20.30).csv
-        "re": re.compile(r"^Gas_Sensor-(\d{4}-\d{2}-\d{2})(?:\s*\([^)]*\))?\.csv$"),
+        # Gas_Sensor-2026-11-10.csv, "... (20.30).csv", "..._15.csv" — all of them
+        "re": re.compile(r"^Gas_Sensor-(\d{4}-\d{2}-\d{2}).*\.csv$"),
         "channels": [
             ch("valve",   "Valve",               "Valve",                "",      0, meta=True),
             ch("round",   "Round",               "Round",                "",      0, meta=True),
