@@ -73,6 +73,11 @@ ROOMS = [
              "icon": "i-wind", "cls": "vel", "paired": True,
              "series": [{"k": "V_in", "label": "Inlet"}, {"k": "V_out", "label": "Outlet"}]},
         ],
+        # temperature paired with the humidity measured at the same place
+        "psychro": [
+            {"id": "in",  "name": "Inlet",  "t": "T_in",  "rh": "H_in"},
+            {"id": "out", "name": "Outlet", "t": "T_out", "rh": "H_out"},
+        ],
         "combo": {
             "axes": [
                 {"id": "y1", "title": "Temperature (\u00b0C)", "unit": "\u00b0C", "side": "left"},
@@ -151,6 +156,12 @@ ROOMS = [
             {"id": "RAW", "title": "Raw voltages", "short": "Voltages", "unit": "V", "dec": 2,
              "icon": "i-gas", "cls": "gas6", "diag": True,
              "series": [{"k": "etoh_v", "label": "Ethanol"}, {"k": "flow_v", "label": "Flow"}]},
+        ],
+        # each round steps the valve through the sampling points, so a round
+        # number lets two positions be compared at the same moment in the cycle
+        "position": {"key": "valve", "label": "Position", "cycle": "round"},
+        "psychro": [
+            {"id": "s", "name": "Sample", "t": "temp", "rh": "rh"},
         ],
         "combo": {
             "axes": [
@@ -336,6 +347,8 @@ def room_public(room):
         "channels": [{k: v for k, v in c.items() if k != "col"} for c in room["channels"]],
         "groups": room["groups"],
         "combo": room.get("combo"),
+        "position": room.get("position"),
+        "psychro": room.get("psychro"),
     }
 
 

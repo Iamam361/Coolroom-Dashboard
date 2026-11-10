@@ -77,6 +77,14 @@ svg{display:block}
   letter-spacing:.8px;margin-bottom:13px}
 .view{display:none}
 .view.on{display:block}
+/* a short fade and rise on page change. Only opacity and transform are
+   animated, which the compositor can do without re-laying out the page,
+   so the charts inside are never re-measured mid-flight. */
+.view.on.enter{animation:viewIn .18s cubic-bezier(.22,.61,.36,1) both}
+@keyframes viewIn{ from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+@media(prefers-reduced-motion:reduce){
+  .view.on.enter{animation:none}
+}
 
 /* ================= chips ================= */
 .chips{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px}
@@ -517,6 +525,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.2 12 3l9 7.2V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
   <symbol id="i-gas" viewBox="0 0 24 24"><circle cx="8" cy="9" r="2.1"/><circle cx="15.5" cy="6.5" r="1.5"/><circle cx="16" cy="13" r="2.6"/><circle cx="9.5" cy="16.5" r="1.7"/></symbol>
   <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2s4.5 4.2 4.5 8.2a4.5 4.5 0 0 1-9 0C7.5 8.4 9 6.6 9 6.6"/><path d="M12 22a6 6 0 0 0 6-6c0-1.6-.6-3-1.5-4.2"/><path d="M12 22a6 6 0 0 1-6-6c0-1.2.3-2.3.9-3.3"/></symbol>
+  <symbol id="i-calc" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 11h2M14 11h2M8 16h2M14 16h2"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
   <symbol id="i-warn" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 2 3 7l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></symbol>
@@ -562,6 +571,8 @@ body.locked .shell,body.locked .mnav{display:none!important}
       <svg class="ic"><use href="#i-home"/></svg><span class="tip">Overview</span></button>
     <button class="rbtn" data-go="detail" aria-label="Detail">
       <svg class="ic"><use href="#i-chart"/></svg><span class="tip">Detail</span></button>
+    <button class="rbtn" data-go="calc" aria-label="Calculations">
+      <svg class="ic"><use href="#i-calc"/></svg><span class="tip">Calculations</span></button>
     <button class="rbtn" data-go="alarms" aria-label="Alarms">
       <svg class="ic"><use href="#i-bell"/></svg><span class="tip">Alarms</span>
       <span class="raildot" id="railAlarm"></span></button>
@@ -629,6 +640,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
           <div id="wrapSpan"><label>Time range</label><select id="selSpan"></select></div>
           <div id="wrapFrom" style="display:none"><label>From</label><select id="selFrom"></select></div>
           <div id="wrapTo" style="display:none"><label>To</label><select id="selTo"></select></div>
+          <div id="wrapPos" style="display:none"><label id="posLbl">Position</label><select id="selPos"></select></div>
           <div style="min-width:0">
             <label>Compare with</label>
             <div class="seg" id="cmpSeg">
@@ -645,6 +657,62 @@ body.locked .shell,body.locked .mnav{display:none!important}
         <div class="card pad">
           <div class="sect">Statistics for this period</div>
           <table class="stats" id="statTable"></table>
+        </div>
+      </section>
+
+      <!-- ============ CALCULATIONS ============ -->
+      <section class="view" id="v-calc">
+        <div class="toprow">
+          <div>
+            <div class="h1"><span>Calculations</span></div>
+            <p class="sub">Worked out from the readings loaded on the Detail page — change the time range there to cover a different period.</p>
+          </div>
+          <div class="right">
+            <span class="pill" id="calcPill">—</span>
+          </div>
+        </div>
+
+        <!-- ---- difference between two positions ---- -->
+        <div class="card pad" id="diffCard" style="margin-bottom:16px">
+          <div class="sect">Difference between positions</div>
+          <div class="note" style="margin:0 0 13px">
+            Readings from two positions in the <b>same round</b> are paired, then subtracted.
+            Pairing by round rather than by clock time matters: the valve visits each position at a different moment, so the nearest-in-time reading is not the matching one.
+          </div>
+          <div class="toolbar" style="margin-bottom:14px">
+            <div><label>From</label><select id="diffA"></select></div>
+            <div><label>Subtract from</label><select id="diffB"></select></div>
+            <div><label>Channel to chart</label><select id="diffK"></select></div>
+          </div>
+          <div class="card ch" style="padding:0;border:none;background:transparent;margin-bottom:14px">
+            <div class="cv" style="height:250px"><canvas id="diffChart"></canvas></div>
+          </div>
+          <table class="stats" id="diffTable"></table>
+          <div class="note" id="diffNote" style="margin-top:11px"></div>
+        </div>
+
+        <!-- ---- psychrometrics ---- -->
+        <div class="card pad" id="psyCard">
+          <div class="sect">Moisture in the air</div>
+          <div class="note" style="margin:0 0 13px">
+            Dew point, absolute humidity and enthalpy, worked out from temperature and relative humidity.
+            Relative humidity alone cannot tell you whether air actually holds more water, because it moves when the temperature moves; absolute humidity can.
+          </div>
+          <div class="alstat" id="psyCards" style="margin-bottom:14px"></div>
+          <div class="toolbar" style="margin-bottom:14px">
+            <div><label>Chart</label><select id="psyK"></select></div>
+            <div><label>Pressure</label><select id="psyP">
+              <option value="101.325">Sea level, 101.325 kPa</option>
+              <option value="100.0">100 kPa</option>
+              <option value="99.0">99 kPa</option>
+            </select></div>
+          </div>
+          <div class="card ch" style="padding:0;border:none;background:transparent">
+            <div class="cv" style="height:250px"><canvas id="psyChart"></canvas></div>
+          </div>
+          <div class="note" style="margin-top:11px">
+            Dew point uses the Magnus formula (valid roughly −4 °C to 60 °C over water); absolute humidity and enthalpy follow from the ideal-gas and moist-air relations. Enthalpy is per kilogram of <b>dry</b> air, the usual convention.
+          </div>
         </div>
       </section>
 
@@ -1116,6 +1184,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
 <nav class="mnav">
   <button class="on" data-go="overview"><svg class="ic sm"><use href="#i-home"/></svg>Overview</button>
   <button data-go="detail"><svg class="ic sm"><use href="#i-chart"/></svg>Detail</button>
+  <button data-go="calc"><svg class="ic sm"><use href="#i-calc"/></svg>Calc</button>
   <button data-go="alarms"><svg class="ic sm"><use href="#i-bell"/></svg>Alarms<span class="mdot" id="mnavAlarm"></span></button>
   <button data-go="export"><svg class="ic sm"><use href="#i-down"/></svg>Export</button>
   <button data-go="settings"><svg class="ic sm"><use href="#i-gear"/></svg>Settings</button>
@@ -1249,8 +1318,10 @@ function demoAPI(path){
 var ROOMS=[], ROOM=null;
 var DEFS=[], KEYS=[], GROUPS=[], COMBO=[], COMBO_AXES=[], META=[];
 
-/* colours for the series inside one chart, in order */
-var SER_PAL=['in','out','accent','ic-vel','ic-hum','ic-temp'];
+/* Colours for the lines inside one chart, in order. The first three have
+   to be obviously different from each other, because three sampling
+   positions is the common case. */
+var SER_PAL=['in','out','ic-vel','ic-temp','ic-hum','accent'];
 
 function applyRoom(room){
   ROOM=room;
@@ -1269,9 +1340,40 @@ function applyRoom(room){
             diag:!!g.diag, paired:!!g.paired, series:ser,
             a:ser[0]&&ser[0].k, b:ser[1]&&ser[1].k};
   });
+  POS=room.position||null;
+  PSY=(room.psychro||[]).filter(function(p){
+    return KEYS.indexOf(p.t)>=0 && KEYS.indexOf(p.rh)>=0;
+  });
   ROOM_COMBO_DEFAULT=((room.combo||{}).series||[]).map(function(x){ return x.k; });
   buildCombo();
 }
+
+/* ---- sampling positions ----------------------------------------------
+   The rig steps a valve through several points, so consecutive readings
+   are not the same place. Everything that draws a line has to say which
+   position it is drawing, or the line is meaningless. */
+var POS=null, PSY=[];
+function posList(){
+  if(!POS) return [];
+  var seen={}, out=[];
+  [S.ovRows, S.rows].forEach(function(rows){
+    (rows||[]).forEach(function(r){
+      var v=r[POS.key];
+      if(v!=null&&!isNaN(v)&&!seen[v]){ seen[v]=1; out.push(v); }
+    });
+  });
+  return out.sort(function(a,b){ return a-b; });
+}
+function posActive(){
+  if(!POS) return null;
+  var v=parseFloat(S.pos);
+  return (S.pos==='all'||isNaN(v))?null:v;
+}
+function rowsForPos(rows,p){
+  if(!POS||p==null) return rows||[];
+  return (rows||[]).filter(function(r){ return r[POS.key]===p; });
+}
+function posLabel(p){ return (POS?POS.label:'Position')+' '+p; }
 
 /* Which channels appear on the combined chart. The room suggests a set; the
    user can tick any channel. Axes are grouped by unit, never more than three
@@ -1342,12 +1444,12 @@ var SPANS=[
   {id:'all',label:'All history',    ms:null}
 ];
 var LS='coolroom_v2';
-var PAGES=['overview','detail','alarms','export','settings'];
+var PAGES=['overview','detail','calc','alarms','export','settings'];
 
 var S={
   page:'overview',
   rows:[], ovRows:[], total:0, cur:{}, days:[],
-  meas:'all', cmp:'none', room:null, diag:false,
+  meas:'all', cmp:'none', room:null, diag:false, pos:'all',
   span:'1h', date:'live', from:0, to:24,
   charts:{}, ovChart:null, timer:null, busy:false,
   zoomed:false, zsync:false,
@@ -1521,6 +1623,7 @@ function rebuildCharts(){
   buildCharts();
   if(S.sparks){ Object.keys(S.sparks).forEach(function(k){ try{S.sparks[k].destroy();}catch(e){} }); S.sparks=null; }
   if(typeof drawChPrevSoon==='function') drawChPrevSoon();
+  if(typeof renderCalc==='function') renderCalc();
   renderOvChart();
   renderDetail(windowBounds());
 }
@@ -1933,17 +2036,33 @@ function wireSets(){
   };
 }
 /* ================= routing ================= */
-function go(page){
+var REDUCED = window.matchMedia &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function go(page,quiet){
   if(PAGES.indexOf(page)<0) page='overview';
+  var same=(S.page===page);
   S.page=page;
-  PAGES.forEach(function(p){ $('v-'+p).classList.toggle('on', p===page); });
+  PAGES.forEach(function(p){
+    var v=$('v-'+p);
+    v.classList.toggle('on', p===page);
+    if(p!==page) v.classList.remove('enter');
+  });
+  /* skip the animation when nothing actually changed, when the room is
+     reloading (an animation over a wait reads as lag), and when the
+     system asks for reduced motion */
+  if(!same && !quiet && !REDUCED){
+    var v=$('v-'+page);
+    v.classList.remove('enter');
+    void v.offsetWidth;            /* restart the animation */
+    v.classList.add('enter');
+  }
   Array.prototype.forEach.call(document.querySelectorAll('[data-go]'),function(b){
     b.classList.toggle('on', b.dataset.go===page);
   });
   if(location.hash.slice(1)!==page) location.hash=page;
   window.scrollTo(0,0);
   var sp=$('sidePanel'); if(sp) sp.classList.toggle('hide', page!=='overview');
-  if(page==='detail') setTimeout(function(){ resizeCharts(); }, 30);
+  if(page==='detail') setTimeout(function(){ resizeCharts(); }, REDUCED?30:210);
   if(page==='overview'||page==='detail') refresh();
 }
 Array.prototype.forEach.call(document.querySelectorAll('[data-go]'),function(b){
@@ -2089,6 +2208,9 @@ function cardShell(g,tall,extraLegend){
 function serColor(i){ return TH[SER_PAL[i%SER_PAL.length]]; }
 function buildCharts(){
   var host=$('charts'); host.innerHTML='';
+  S.lineSig=S.meas+'|'+(S.meas==='combo'
+        ? COMBO.length
+        : GROUPS.map(function(g){ return plotLines(g).length; }).join(','));
   Object.keys(S.charts).forEach(function(k){ try{S.charts[k].destroy();}catch(e){} });
   S.charts={};
   if(!GROUPS.length) return;
@@ -2108,6 +2230,9 @@ function buildCharts(){
       type:chartKind(),
       data:{datasets:COMBO.map(function(c){
         var sc=seriesOf(c.k);
+        /* the combined chart keeps one line per channel; with several
+           positions mixed it would be unreadable, so a position must be
+           chosen for it to mean anything (the note below says so) */
         return ds(c.label,sc.c,false,
           {yAxisID:c.axis,unit:c.unit,dec:c.dec,short:c.short,fill:false,
            borderDash:styleDash(sc.s), borderWidth:CH.w,
@@ -2134,23 +2259,44 @@ function buildCharts(){
   var tall = chartHeight(list.length===1);
   list.forEach(function(g){
     var card=el('div','card ch');
+    var lines=plotLines(g);
     var legend = !CH.legend ? '' :
-      g.series.map(function(sr,i){
-        return '<span><i style="background:'+serColor(i)+'"></i>'+sr.label+'</span>';
+      lines.map(function(ln,i){
+        return '<span><i style="background:'+serColor(i)+'"></i>'+ln.label+'</span>';
       }).join('')+
       '<span id="cmpLg-'+g.id+'" style="display:none"><i class="dash"></i>earlier</span>';
     card.innerHTML=cardShell(g,tall,legend);
     host.appendChild(card);
-    var sets=g.series.map(function(sr,i){ return ds(sr.label,serColor(i)); });
-    g.series.forEach(function(sr,i){
-      sets.push(ds(sr.label+' earlier',serColor(i),true));
-    });
+    var sets=lines.map(function(ln,i){ return ds(ln.label,serColor(i)); });
+    lines.forEach(function(ln,i){ sets.push(ds(ln.label+' earlier',serColor(i),true)); });
     var opts=chartOpts(g);
     opts.plugins.alBands={bands:alBandsFor(g)};
     S.charts[g.id]=new Chart($('c-'+g.id),{
       type:chartKind(), data:{datasets:sets}, options:opts, plugins:[alBandPlugin]
     });
   });
+}
+
+/* The lines on one chart: every series, multiplied by sampling position
+   when the room has several and no single one is chosen. Consecutive
+   readings come from different points, so a line that mixes them is a
+   line through three different places. */
+function plotLines(g){
+  var ps = POS ? posList() : [];
+  var act = posActive();
+  var split = !!POS && ps.length>1 && act==null;
+  var out=[];
+  g.series.forEach(function(sr){
+    if(split){
+      ps.forEach(function(p){
+        out.push({k:sr.k, p:p,
+          label:(g.series.length>1 ? sr.label+' \u00b7 ' : '')+posLabel(p)});
+      });
+    }else{
+      out.push({k:sr.k, p:act, label:sr.label});
+    }
+  });
+  return out;
 }
 function resizeCharts(){
   Object.keys(S.charts).forEach(function(k){ try{S.charts[k].resize();}catch(e){} });
@@ -2232,15 +2378,18 @@ function statsFor(rows){
   return out;
 }
 function renderStats(){
-  var st=statsFor(S.rows);
   var show = (S.meas==='all'||S.meas==='combo') ? visibleGroups()
            : GROUPS.filter(function(g){return g.id===S.meas;});
   if(!show.length) show=visibleGroups();
   var h='<tr><th>Measurement</th><th>Latest</th><th>Min</th><th>Max</th><th>Average</th><th>Std dev</th><th>Change</th></tr>';
   show.forEach(function(g){
-    g.series.forEach(function(sr){
-      var s=st[sr.k], d=DEFS.filter(function(x){return x.k===sr.k;})[0]||{dec:g.dec};
-      var name = g.series.length>1 ? g.title+' \u2014 '+sr.label : g.title;
+    plotLines(g).forEach(function(ln){
+      var st=statsFor(rowsForPos(S.rows,ln.p));
+      var s=st[ln.k], d=DEFS.filter(function(x){return x.k===ln.k;})[0]||{dec:g.dec};
+      var srLabel=(g.series.filter(function(x){return x.k===ln.k;})[0]||{}).label||'';
+      var name=g.title;
+      if(g.series.length>1) name+=' \u2014 '+srLabel;
+      if(ln.p!=null) name+=' \u00b7 '+posLabel(ln.p);
       if(!s){ h+='<tr><td>'+name+'</td><td colspan="6" style="color:var(--tx3)">no data</td></tr>'; return; }
       var chg=s.last-s.first;
       h+='<tr><td>'+name+'</td>'+
@@ -2486,6 +2635,39 @@ function buildMeasChips(){
   });
   chipSet('measChips','m',S.meas);
 }
+/* Rebuild the position dropdown only when the set of positions actually
+   changes, so it does not flicker or lose focus on every refresh. */
+var POS_SIG='';
+function posSelectSync(){
+  var sig=(ROOM?ROOM.id:'')+'|'+(POS?posList().join(','):'');
+  if(sig===POS_SIG) return;
+  POS_SIG=sig;
+  buildPosSelect();
+}
+function buildPosSelect(){
+  var wrap=$('wrapPos'), sel=$('selPos');
+  if(!sel) return;
+  var ps=POS?posList():[];
+  if(!POS||ps.length<2){
+    if(wrap) wrap.style.display='none';
+    S.pos='all';
+    return;
+  }
+  if(wrap) wrap.style.display='';
+  var lbl=$('posLbl'); if(lbl) lbl.textContent=POS.label;
+  var want=String(S.pos);
+  if(want!=='all' && ps.indexOf(parseFloat(want))<0){ want='all'; S.pos='all'; }
+  sel.innerHTML='<option value="all">All '+ps.length+' positions</option>'+
+    ps.map(function(p){
+      return '<option value="'+p+'">'+POS.label+' '+p+'</option>';
+    }).join('');
+  sel.value=want;
+  sel.onchange=function(){
+    S.pos=this.value; S.zoomed=false;
+    buildCharts(); save(); refresh();
+  };
+}
+
 async function switchRoom(id){
   var r=ROOMS.filter(function(x){ return x.id===id; })[0];
   if(!r || (ROOM && r.id===ROOM.id)) return;
@@ -2494,9 +2676,11 @@ async function switchRoom(id){
   S.rows=[]; S.ovRows=[]; S.cur={}; S.days=[];
   if(S.sparks){ Object.keys(S.sparks).forEach(function(k){ try{S.sparks[k].destroy();}catch(e){} }); S.sparks=null; }
   var g=$('tileGrid'); if(g){ g.dataset.built=''; g.innerHTML=''; }
-  buildRoomChips(); buildMeasChips(); buildCharts();
+  var hold=$('v-'+S.page); if(hold) hold.classList.remove('enter');
+  buildRoomChips(); buildMeasChips(); POS_SIG=''; posSelectSync(); buildCharts();
   bootSeries();                      /* the line settings belong to this room */
   alBuildRules(); alRefresh();
+  CALC.a=null; CALC.b=null; CALC.k=null;
   drawChPrevSoon();
   setTx('roomTx', ROOM.name);
   save();
@@ -2551,6 +2735,14 @@ async function refresh(){
 }
 
 async function renderDetail(w){
+  /* The lines on a chart depend on how many sampling positions the data
+     has shown so far, which can grow after the chart was built. Rebuild
+     when that changes, or the datasets and the lines fall out of step. */
+  var sig=S.meas+'|'+(S.meas==='combo'
+        ? COMBO.length
+        : GROUPS.map(function(g){ return plotLines(g).length; }).join(','));
+  if(sig!==S.lineSig){ S.lineSig=sig; buildCharts(); }
+
   var ids=Object.keys(S.charts);
   if(!ids.length) return;
   if(!S.zoomed) S.tickFmt=makeFmt(w.to-w.from);
@@ -2570,8 +2762,9 @@ async function renderDetail(w){
     var cc=S.charts.combo;
     if(cc){
       if(!S.zoomed){ cc.options.scales.x.min=w.from; cc.options.scales.x.max=w.to; }
+      var src=rowsForPos(S.rows,posActive());
       COMBO.forEach(function(c,i){
-        cc.data.datasets[i].data=S.rows.map(function(r){return {x:r.t,y:r[c.k]};});
+        cc.data.datasets[i].data=src.map(function(r){return {x:r.t,y:r[c.k]};});
       });
       cc.update('none');
     }
@@ -2579,18 +2772,22 @@ async function renderDetail(w){
     GROUPS.forEach(function(g){
       var ch=S.charts[g.id]; if(!ch) return;
       if(!S.zoomed){ ch.options.scales.x.min=w.from; ch.options.scales.x.max=w.to; }
-      var n=g.series.length;
-      g.series.forEach(function(sr,i){
-        ch.data.datasets[i].data=S.rows.map(function(r){return {x:r.t,y:r[sr.k]};});
-        if(ch.data.datasets[n+i])
-          ch.data.datasets[n+i].data=cmpRows?cmpRows.map(function(r){return {x:r.t,y:r[sr.k]};}):[];
+      var lines=plotLines(g), n=lines.length;
+      lines.forEach(function(ln,i){
+        var src=rowsForPos(S.rows,ln.p);
+        ch.data.datasets[i].data=src.map(function(r){return {x:r.t,y:r[ln.k]};});
+        if(ch.data.datasets[n+i]){
+          var cmp=cmpRows?rowsForPos(cmpRows,ln.p):null;
+          ch.data.datasets[n+i].data=cmp?cmp.map(function(r){return {x:r.t,y:r[ln.k]};}):[];
+        }
       });
       var lg=$('cmpLg-'+g.id); if(lg) lg.style.display=(cmpRows&&cmpRows.length)?'':'none';
       ch.update('none');
     });
   }
-  stampSpans();
   renderStats();
+  posSelectSync();
+  if(typeof renderCalc==='function') renderCalc();
   if(typeof alRefresh==='function') alRefresh();
 
   var note='Showing '+w.desc+'. ';
@@ -2800,7 +2997,9 @@ async function buildWorkbook(rows,from,to,withCharts){
   }
 
   var ws=wb.addWorksheet('Data',{views:[{state:'frozen',ySplit:1}]});
+  var wantPos=!!POS && posList().length>1;
   var wcols=[{header:'Date',key:'d',width:12},{header:'Time',key:'t',width:10}];
+  if(wantPos) wcols.push({header:POS.label,key:'pos',width:10,style:{numFmt:'0'}});
   cols.forEach(function(d){
     wcols.push({header:d.n+(d.unit?' ('+d.unit+')':''), key:'c_'+d.k,
                 width:Math.max(11,Math.min(22,d.n.length+4)),
@@ -2819,6 +3018,7 @@ async function buildWorkbook(rows,from,to,withCharts){
   ws.autoFilter={from:{row:1,column:1},to:{row:1,column:wcols.length}};
   rows.forEach(function(r){
     var d=new Date(r.t), o={d:fmtDate(d),t:fmtTime(d)};
+    if(wantPos) o.pos=(r[POS.key]==null?null:r[POS.key]);
     cols.forEach(function(c){ o['c_'+c.k]=(r[c.k]==null?null:r[c.k]); });
     pairs.forEach(function(g){
       var a=r[g.series[0].k], b=r[g.series[1].k];
@@ -2857,12 +3057,16 @@ function saveBlob(blob,name){
 }
 function exportName(ext){
   var slug=(ROOM?ROOM.short:'Sensor').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  var act=posActive();
+  if(act!=null) slug+='_'+(POS?POS.label:'pos')+act;
   return slug+'_'+fmtDate(new Date())+'_'+fmtTime(new Date()).replace(/:/g,'-')+'.'+ext;
 }
 function exportCSV(rows){
   var cols=DEFS.filter(function(d){ return S.diag||!d.diag; });
   var pairs=GROUPS.filter(function(g){ return g.paired && g.series.length===2; });
+  var wantPos=!!POS && posList().length>1;
   var head=['Date','Time'].concat(
+    wantPos?[POS.label]:[],
     cols.map(function(d){ return d.n+(d.unit?' ('+d.unit+')':''); }),
     pairs.map(function(g){ return '\u0394 '+g.short+' ('+g.unit+')'; }));
   var q=function(s){ s=String(s); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
@@ -2870,6 +3074,7 @@ function exportCSV(rows){
   rows.forEach(function(r){
     var d=new Date(r.t);
     var out=[fmtDate(d),fmtTime(d)];
+    if(wantPos) out.push(r[POS.key]==null?'':r[POS.key]);
     cols.forEach(function(c){ out.push(r[c.k]==null?'':r[c.k]); });
     pairs.forEach(function(g){
       var a=r[g.series[0].k], b=r[g.series[1].k];
@@ -2942,9 +3147,31 @@ async function doExport(kind){
   try{
     var raw=await fetchFull(f,t,function(n){ $('exNote').textContent='Fetched '+n+' readings…'; });
     if(!raw.length){ $('exNote').textContent='No readings in that period.'; return; }
-    var step=exEveryStep();
-    var rows=resampleRows(raw,step,exEveryHow());
-    var shrink=step?(' from '+raw.length+' readings, '+exEveryLabel()):'';
+    /* Export follows the position chosen on Detail. Resampling must happen
+       per position, or an average would blend readings from different
+       sampling points into one row. */
+    var act=posActive();
+    var picked=rowsForPos(raw,act);
+    if(!picked.length){
+      $('exNote').textContent='No readings for '+(act==null?'that period':posLabel(act))+'.';
+      return;
+    }
+    var step=exEveryStep(), how=exEveryHow(), rows;
+    if(step && POS && act==null && posList().length>1){
+      rows=[];
+      posList().forEach(function(p){
+        resampleRows(rowsForPos(picked,p),step,how).forEach(function(r){
+          r[POS.key]=p; rows.push(r);
+        });
+      });
+      rows.sort(function(a,b){ return a.t-b.t; });
+    }else{
+      rows=resampleRows(picked,step,how);
+      if(step && act!=null) rows.forEach(function(r){ r[POS.key]=act; });
+    }
+    var shrink=step?(' from '+picked.length+' readings, '+exEveryLabel()):'';
+    if(POS && posList().length>1)
+      shrink+=(act==null?' \u00b7 all positions':' \u00b7 '+posLabel(act));
     if(kind==='csv'){
       exportCSV(rows);
       $('exNote').textContent='Exported '+rows.length+' row'+(rows.length===1?'':'s')+' as CSV'+shrink+'.';
@@ -2976,7 +3203,7 @@ function save(){
     api:$('api').value, poll:$('poll').value, maxpts:$('maxpts').value,
     stale:$('staleAfter').value, stab:S.stab, meas:S.meas, cmp:S.cmp,
     span:S.span, date:S.date, from:S.from, to:S.to,
-    ch:CH, ty:TY, cs:CS, room:S.room, diag:S.diag, pick:COMBO_PICK,
+    ch:CH, ty:TY, cs:CS, room:S.room, diag:S.diag, pos:S.pos, pick:COMBO_PICK, calc:CALC,
     al:AL, alui:AL_UI,
     exEvery:exEveryStep(), exHow:exEveryHow()})); }catch(e){}
 }
@@ -3016,6 +3243,8 @@ function load(){
       if(Array.isArray(c.pick[rid])) COMBO_PICK[rid]=c.pick[rid].slice();
     });
     if(c.room) S.room=c.room;
+    if(c.pos!=null) S.pos=String(c.pos);
+    if(c.calc) Object.keys(CALC).forEach(function(k){ if(c.calc[k]!=null) CALC[k]=c.calc[k]; });
     if(typeof c.diag==='boolean') S.diag=c.diag;
     if(c.exEvery!=null && $('exEvery')) $('exEvery').value=String(c.exEvery);
     if(c.exHow && $('exHow')) Array.prototype.forEach.call($('exHow').children,function(b){
@@ -3481,6 +3710,261 @@ function bootUI(){
 }
 
 /* ================================================================
+   Calculations — difference between sampling positions, and the
+   moisture content of the air. Both work on the readings already
+   loaded for the Detail page.
+   ================================================================ */
+
+var CALC={a:null, b:null, k:null, psyK:null, p:101.325};
+var calcCharts={};
+
+/* ---- 1. difference between two positions ---------------------------
+   The valve visits each position at a different moment, so readings are
+   paired by round number. Pairing by nearest timestamp would compare a
+   position against its own neighbour in the cycle, not against the same
+   moment in the process. */
+function diffPairs(a,b){
+  if(!POS||a==null||b==null||a===b) return [];
+  var cyc=POS.cycle, out=[];
+  if(!cyc) return [];
+  var byRound={};
+  S.rows.forEach(function(r){
+    var c=r[cyc], p=r[POS.key];
+    if(c==null||p==null) return;
+    byRound[c]=byRound[c]||{};
+    byRound[c][p]=r;
+  });
+  Object.keys(byRound).forEach(function(c){
+    var ra=byRound[c][a], rb=byRound[c][b];
+    if(!ra||!rb) return;
+    var rec={t:Math.max(ra.t,rb.t), _round:+c};
+    KEYS.forEach(function(k){
+      var va=ra[k], vb=rb[k];
+      rec[k]=(va==null||vb==null||isNaN(va)||isNaN(vb))?null:(vb-va);
+    });
+    out.push(rec);
+  });
+  out.sort(function(x,y){ return x.t-y.t; });
+  return out;
+}
+
+function renderDiff(){
+  var card=$('diffCard'); if(!card) return;
+  var ps=POS?posList():[];
+  if(!POS||ps.length<2||!POS.cycle){
+    card.style.display='none';
+    return;
+  }
+  card.style.display='';
+  var selA=$('diffA'), selB=$('diffB'), selK=$('diffK');
+
+  if(CALC.a==null||ps.indexOf(CALC.a)<0) CALC.a=ps[0];
+  if(CALC.b==null||ps.indexOf(CALC.b)<0||CALC.b===CALC.a) CALC.b=ps[1];
+  var opts=function(sel,val){
+    sel.innerHTML=ps.map(function(p){
+      return '<option value="'+p+'">'+POS.label+' '+p+'</option>';
+    }).join('');
+    sel.value=String(val);
+  };
+  opts(selA,CALC.a); opts(selB,CALC.b);
+
+  var usable=DEFS.filter(function(d){ return S.diag||!d.diag; });
+  if(!CALC.k||!usable.some(function(d){return d.k===CALC.k;}))
+    CALC.k=usable.length?usable[0].k:null;
+  selK.innerHTML=usable.map(function(d){
+    return '<option value="'+d.k+'">'+d.n+(d.unit?' ('+d.unit+')':'')+'</option>';
+  }).join('');
+  if(CALC.k) selK.value=CALC.k;
+
+  selA.onchange=function(){
+    CALC.a=parseFloat(this.value);
+    if(CALC.a===CALC.b){ CALC.b=ps.filter(function(p){return p!==CALC.a;})[0]; }
+    save(); renderDiff();
+  };
+  selB.onchange=function(){
+    CALC.b=parseFloat(this.value);
+    if(CALC.a===CALC.b){ CALC.a=ps.filter(function(p){return p!==CALC.b;})[0]; }
+    save(); renderDiff();
+  };
+  selK.onchange=function(){ CALC.k=this.value; save(); renderDiff(); };
+
+  var pairs=diffPairs(CALC.a,CALC.b);
+  var note=$('diffNote');
+
+  var h='<tr><th>Channel</th><th>Mean difference</th><th>Min</th><th>Max</th><th>Std dev</th><th>Pairs</th></tr>';
+  if(!pairs.length){
+    h+='<tr><td colspan="6" style="color:var(--tx3)">No rounds in this period contain both positions.</td></tr>';
+    if(note) note.textContent='Nothing to compare yet — widen the time range on the Detail page.';
+  }else{
+    var st=statsFor(pairs);
+    usable.forEach(function(d){
+      var s=st[d.k];
+      if(!s){ h+='<tr><td>'+d.n+'</td><td colspan="5" style="color:var(--tx3)">no paired readings</td></tr>'; return; }
+      var col=Math.abs(s.avg)<Math.pow(10,-d.dec)?'var(--tx2)':(s.avg>0?'var(--out)':'var(--in)');
+      h+='<tr><td>'+d.n+'</td>'+
+         '<td style="color:'+col+'">'+(s.avg>0?'+':'')+fmt(s.avg,d.dec)+' '+(d.unit||'')+'</td>'+
+         '<td>'+fmt(s.min,d.dec)+'</td><td>'+fmt(s.max,d.dec)+'</td>'+
+         '<td>'+fmt(s.sd,d.dec)+'</td><td>'+s.n+'</td></tr>';
+    });
+    if(note) note.innerHTML='<b>'+pairs.length+' round'+(pairs.length===1?'':'s')+'</b> had readings at both '+
+      POS.label.toLowerCase()+' '+CALC.a+' and '+CALC.b+'. A positive number means '+
+      POS.label.toLowerCase()+' '+CALC.b+' reads higher.';
+  }
+  $('diffTable').innerHTML=h;
+
+  var d=DEFS.filter(function(x){return x.k===CALC.k;})[0];
+  drawCalcChart('diffChart', pairs, CALC.k,
+    d?(d.n+' difference'+(d.unit?' ('+d.unit+')':'')):'Difference', d?d.dec:2, true);
+
+  var pill=$('calcPill');
+  if(pill) pill.textContent=pairs.length?pairs.length+' paired rounds':'no pairs';
+}
+
+/* ---- 2. moisture in the air ----------------------------------------
+   Magnus formula for dew point, then the ideal-gas relations for how
+   much water the air is actually carrying. */
+function satPressure(tC){            /* kPa over water */
+  return 0.61094*Math.exp((17.625*tC)/(tC+243.04));
+}
+function dewPoint(tC,rh){
+  if(tC==null||rh==null||rh<=0) return null;
+  var a=17.625, b=243.04;
+  var g=Math.log(rh/100)+(a*tC)/(b+tC);
+  return (b*g)/(a-g);
+}
+function absHumidity(tC,rh){          /* g of water per m3 of air */
+  if(tC==null||rh==null) return null;
+  var pv=satPressure(tC)*(rh/100);    /* kPa */
+  return 1000*(pv*1000)/(461.5*(tC+273.15));
+}
+function mixingRatio(tC,rh,pkPa){     /* kg water per kg dry air */
+  if(tC==null||rh==null) return null;
+  var pv=satPressure(tC)*(rh/100);
+  if(pkPa-pv<=0) return null;
+  return 0.62198*pv/(pkPa-pv);
+}
+function enthalpy(tC,rh,pkPa){        /* kJ per kg of dry air */
+  var w=mixingRatio(tC,rh,pkPa);
+  if(w==null) return null;
+  return 1.006*tC + w*(2501+1.86*tC);
+}
+
+var PSY_OUT=[
+  {k:'dew', n:'Dew point',        unit:'°C',   dec:2, f:function(t,rh,p){ return dewPoint(t,rh); }},
+  {k:'ah',  n:'Absolute humidity',unit:'g/m³', dec:2, f:function(t,rh,p){ return absHumidity(t,rh); }},
+  {k:'w',   n:'Mixing ratio',     unit:'g/kg',      dec:2, f:function(t,rh,p){ var w=mixingRatio(t,rh,p); return w==null?null:w*1000; }},
+  {k:'h',   n:'Enthalpy',         unit:'kJ/kg',     dec:2, f:function(t,rh,p){ return enthalpy(t,rh,p); }}
+];
+
+/* One line per temperature/humidity pair, times each sampling position:
+   the positions sit at different temperatures, so a single line through
+   all of them is a sawtooth between places, not a trend over time. */
+function psySeries(){
+  var ps=POS?posList():[], act=posActive();
+  var split=!!POS && ps.length>1 && act==null;
+  var out=[];
+  PSY.forEach(function(pair){
+    if(split){
+      ps.forEach(function(p){
+        out.push({label:(PSY.length>1?pair.name+' \u00b7 ':'')+posLabel(p),
+                  pair:pair, p:p, rows:psyRows(pair,p)});
+      });
+    }else{
+      out.push({label:pair.name, pair:pair, p:act, rows:psyRows(pair,act)});
+    }
+  });
+  return out;
+}
+/* the newest reading that belongs to this position */
+function psyLatest(pair,p){
+  var src=rowsForPos(S.rows,p);
+  for(var i=src.length-1;i>=0;i--){
+    if(src[i][pair.t]!=null && src[i][pair.rh]!=null) return src[i];
+  }
+  return S.cur;
+}
+function psyRows(pair,p){
+  var src=rowsForPos(S.rows,p);
+  return src.map(function(r){
+    var t=r[pair.t], rh=r[pair.rh], o={t:r.t};
+    PSY_OUT.forEach(function(x){
+      o[x.k]=(t==null||rh==null)?null:x.f(t,rh,CALC.p);
+    });
+    return o;
+  });
+}
+
+function renderPsy(){
+  var card=$('psyCard'); if(!card) return;
+  if(!PSY.length){ card.style.display='none'; return; }
+  card.style.display='';
+
+  var sel=$('psyK'), selP=$('psyP');
+  if(!CALC.psyK||!PSY_OUT.some(function(x){return x.k===CALC.psyK;})) CALC.psyK='dew';
+  sel.innerHTML=PSY_OUT.map(function(x){
+    return '<option value="'+x.k+'">'+x.n+' ('+x.unit+')</option>';
+  }).join('');
+  sel.value=CALC.psyK;
+  sel.onchange=function(){ CALC.psyK=this.value; save(); renderPsy(); };
+  selP.value=String(CALC.p);
+  selP.onchange=function(){ CALC.p=parseFloat(this.value)||101.325; save(); renderPsy(); };
+
+  var series=psySeries();
+  var cards='';
+  series.forEach(function(se){
+    var r=psyLatest(se.pair,se.p);
+    var t=r[se.pair.t], rh=r[se.pair.rh];
+    PSY_OUT.forEach(function(x){
+      var v=(t==null||rh==null)?null:x.f(t,rh,CALC.p);
+      cards+='<div class="alcard'+(v==null?' idle':'')+'">'+
+        '<div class="top"><i style="background:var(--accent)"></i><b>'+x.n+'</b>'+
+        '<span class="st">'+se.label+'</span></div>'+
+        '<div class="big">'+fmt(v,x.dec)+'<u>'+x.unit+'</u></div>'+
+        '<div class="lim">from '+fmt(t,1)+'\u200a\u00b0C and '+fmt(rh,1)+'\u200a% RH</div></div>';
+    });
+  });
+  $('psyCards').innerHTML=cards;
+
+  var spec=PSY_OUT.filter(function(x){return x.k===CALC.psyK;})[0];
+  drawCalcChart('psyChart', null, CALC.psyK, spec.n+' ('+spec.unit+')', spec.dec, false, series);
+}
+
+/* one shared chart builder for both sections */
+function drawCalcChart(id,rows,key,title,dec,zeroLine,multi){
+  var cv=$(id); if(!cv||typeof Chart==='undefined') return;
+  if(calcCharts[id]){ try{calcCharts[id].destroy();}catch(e){} delete calcCharts[id]; }
+  var sets=[];
+  if(multi){
+    multi.forEach(function(s,i){
+      sets.push(Object.assign(ds(s.label,serColor(i)),{
+        data:s.rows.map(function(r){return {x:r.t,y:r[key]};})}));
+    });
+  }else{
+    sets.push(Object.assign(ds(title,TH.accent),{
+      data:(rows||[]).map(function(r){return {x:r.t,y:r[key]};})}));
+  }
+  var o=chartOpts({id:id,dec:dec,unit:'',title:title});
+  o.plugins.zoom={zoom:{wheel:{enabled:false},pinch:{enabled:false},drag:{enabled:false}},pan:{enabled:false}};
+  o.plugins.legend={display:!!multi && multi.length>1, position:'top', align:'end',
+    labels:{boxWidth:11,boxHeight:11,usePointStyle:true,pointStyle:'line',
+            color:TH.tx2,font:{size:10.5*CH.fsk,weight:'600'},padding:10}};
+  o.scales.y.title.text=title;
+  if(zeroLine) o.plugins.alBands={bands:[]};
+  var all=[];
+  sets.forEach(function(s){ s.data.forEach(function(p){ if(p.y!=null) all.push(p.x); }); });
+  if(all.length){ o.scales.x.min=Math.min.apply(null,all); o.scales.x.max=Math.max.apply(null,all); }
+  calcCharts[id]=new Chart(cv,{type:chartKind(),data:{datasets:sets},options:o});
+}
+
+function renderCalc(){
+  if(!ROOM) return;
+  renderDiff();
+  renderPsy();
+}
+function bootCalc(){ renderCalc(); }
+
+
+/* ================================================================
    Alarms — limits per channel, checked in this browser only.
    Nothing is sent anywhere, and nothing runs while the page is shut.
    ================================================================ */
@@ -3822,6 +4306,8 @@ async function startApp(){
   setTx('roomTx', ROOM.name);
   bootSeries();
   bootAlarms();
+  posSelectSync();
+  bootCalc();
   buildCharts();
   schedule();
   await loadDays();
