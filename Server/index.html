@@ -237,6 +237,66 @@ code{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:calc(11.5px*va
 .alcard.err i{background:var(--err)} .alcard.err .st{color:var(--err)}
 .alcard.idle{opacity:.6}
 .altable{display:flex;flex-direction:column;gap:7px}
+.reptiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin-bottom:16px}
+.reptile{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-ctl);padding:13px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.reptile span{font-size:calc(10.5px*var(--fsk));font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.reptile b{font-size:calc(24px*var(--fsk));font-weight:800;letter-spacing:-.8px;font-variant-numeric:tabular-nums}
+.reptile small{font-size:calc(11px*var(--fsk));color:var(--tx3);font-weight:600}
+.repcard{margin-bottom:16px}
+.repcard .stats .u{color:var(--tx3);font-weight:600;font-size:.85em;margin-left:3px}
+.repcard .stats tr.grp td{border-top:1px solid var(--line)}
+.repcard .pdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.rephead{display:none}
+@media print{
+  @page{margin:14mm}
+  body.on-report{background:#fff !important}
+  body.on-report .rail,body.on-report .mnav,body.on-report .login,body.on-report #demoBar,body.on-report .reptools,body.on-report .view:not(#v-report){display:none !important}
+  body.on-report .shell,body.on-report .body,body.on-report .col{display:block !important;margin:0 !important;padding:0 !important;max-width:none !important;width:auto !important}
+  body.on-report #v-report{display:block !important;animation:none !important}
+  body.on-report #v-report .toprow{display:none !important}
+  body.on-report .rephead{display:block;margin:0 0 12px;border-bottom:1.5px solid #000;padding-bottom:8px}
+  .rephead h1{font-size:18pt;margin:0 0 3px;color:#000}
+  .rephead p{margin:0;font-size:10pt;color:#333}
+  body.on-report .card{box-shadow:none !important;border:1px solid #bbb !important;background:#fff !important;break-inside:auto}
+  body.on-report .reptile{background:#fff !important;border:1px solid #bbb !important}
+  body.on-report .repcard .stats{font-size:9pt}
+  body.on-report .repcard .stats tr{break-inside:avoid}
+  body.on-report .reptile,body.on-report .reptile b,body.on-report .stats td,body.on-report .stats th,body.on-report .sect,body.on-report .note{color:#000 !important}
+  .pdot{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.alcard.wide{grid-column:span 2}
+.alcard .top b small{font-weight:600;color:var(--tx3);margin-left:4px}
+.alparts{display:flex;flex-direction:column;gap:5px}
+.alpart{display:flex;align-items:center;gap:8px;font-size:calc(12px*var(--fsk));font-variant-numeric:tabular-nums}
+.alpart i{width:9px;height:9px;border-radius:50%;flex:none}
+.alpart .pn{color:var(--tx2);font-weight:600;min-width:74px}
+.alpart .pv{font-weight:800;font-size:calc(15px*var(--fsk));min-width:62px;text-align:right}
+.alpart .ps{color:var(--tx3);font-weight:600;font-size:calc(10.5px*var(--fsk));margin-left:auto;text-align:right}
+.alpart.err .pv,.alpart.err .ps{color:var(--err)}
+.alpart.warn .ps{color:var(--warn)}
+.pvbtn{flex:none;border:1px solid var(--line);background:transparent;color:var(--tx2);border-radius:999px;
+  padding:5px 11px;font:inherit;font-size:calc(11px*var(--fsk));font-weight:700;cursor:pointer;white-space:nowrap}
+.pvbtn:hover{background:var(--hover)}
+.pvbtn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-tx)}
+.alrow.split{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.alrow input:disabled{opacity:.45}
+.alsub{margin:0 0 8px 39px;padding:8px 10px 8px 12px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.alsubrow{display:flex;align-items:center;gap:11px}
+.alsubrow i{width:9px;height:9px;border-radius:50%;flex:none}
+.alsubrow .pn{flex:1;min-width:0;font-size:calc(12px*var(--fsk));font-weight:600;color:var(--tx2)}
+.alsubrow .lab{font-size:calc(10.5px*var(--fsk));font-weight:700;color:var(--tx3)}
+.alsubrow input[type=number]{width:94px;flex:none;padding:7px 9px;text-align:right}
+.alsubrow::after{content:"";width:calc(94px + 11px + 34px);flex:none}
+#alSoundOpts.dimmed{opacity:.5}
+#alSnooze.on{border-color:var(--warn);color:var(--warn)}
+@media(max-width:760px){
+  .alcard.wide{grid-column:auto}
+  .alsub{margin-left:8px}
+  .alsubrow{flex-wrap:wrap}
+  .alsubrow .pn{flex:1 0 100%}
+  .alsubrow input[type=number]{width:78px}
+  .alsubrow::after{display:none}
+}
 .alrow{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:var(--r-sm);
   border:1px solid transparent}
 .alrow:hover{background:var(--hover)}
@@ -531,6 +591,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.2 12 3l9 7.2V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
   <symbol id="i-gas" viewBox="0 0 24 24"><circle cx="8" cy="9" r="2.1"/><circle cx="15.5" cy="6.5" r="1.5"/><circle cx="16" cy="13" r="2.6"/><circle cx="9.5" cy="16.5" r="1.7"/></symbol>
   <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2s4.5 4.2 4.5 8.2a4.5 4.5 0 0 1-9 0C7.5 8.4 9 6.6 9 6.6"/><path d="M12 22a6 6 0 0 0 6-6c0-1.6-.6-3-1.5-4.2"/><path d="M12 22a6 6 0 0 1-6-6c0-1.2.3-2.3.9-3.3"/></symbol>
+  <symbol id="i-report" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></symbol>
   <symbol id="i-calc" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 11h2M14 11h2M8 16h2M14 16h2"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
   <symbol id="i-warn" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
@@ -582,6 +643,8 @@ body.locked .shell,body.locked .mnav{display:none!important}
     <button class="rbtn" data-go="alarms" aria-label="Alarms">
       <svg class="ic"><use href="#i-bell"/></svg><span class="tip">Alarms</span>
       <span class="raildot" id="railAlarm"></span></button>
+    <button class="rbtn" data-go="report" aria-label="Report">
+      <svg class="ic"><use href="#i-report"/></svg><span class="tip">Report</span></button>
     <button class="rbtn" data-go="export" aria-label="Export">
       <svg class="ic"><use href="#i-down"/></svg><span class="tip">Export</span></button>
     <button class="rbtn" data-go="settings" aria-label="Settings">
@@ -756,6 +819,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
             Set a low and a high limit for any channel. Leave a box empty to ignore that side.
             <b>Stuck</b> catches a sensor that has frozen: if the value does not change at all for that many minutes, it is flagged — which is how a dead sensor usually looks, rather than going out of range.
           </div>
+          <div class="note" id="alPvHelp" style="margin:0 0 13px;display:none"></div>
           <div class="altable" id="alRules"></div>
           <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">
             <button class="btn sm" id="alSuggest" type="button">Suggest from recent data</button>
@@ -764,15 +828,48 @@ body.locked .shell,body.locked .mnav{display:none!important}
         </div>
 
         <div class="card pad" style="margin-bottom:16px">
-          <div class="sect">How you are told</div>
+          <div class="sect">Sound</div>
           <div class="optrow">
-            <div class="opt"><label>While this page is open</label>
-              <div class="seg" id="alSound"><button class="on" data-v="0">Silent</button><button data-v="1">Beep on a new alarm</button></div>
-              <div class="note">A short tone the first time a channel goes into alarm. Repeats only if it recovers and trips again.</div>
+            <div class="opt"><label>Alarm sound</label>
+              <div class="seg" id="alSound"><button class="on" data-v="0">Off</button><button data-v="1">On</button></div>
             </div>
-            <div class="opt"><label>Show bands on the charts</label>
+            <div class="opt"><label>Which alarms make a sound</label>
+              <div class="seg" id="alWhich"><button class="on" data-v="all">All alarms</button><button data-v="err">Only outside limits</button></div>
+            </div>
+          </div>
+          <div class="grid2" id="alSoundOpts" style="margin-top:14px">
+            <div>
+              <label for="alTone">Tone</label>
+              <select id="alTone"></select>
+            </div>
+            <div>
+              <label for="alRepeat">Repeat</label>
+              <select id="alRepeat">
+                <option value="0">Once, when the alarm starts</option>
+                <option value="15">Every 15 seconds until it clears</option>
+                <option value="30">Every 30 seconds until it clears</option>
+                <option value="60">Every minute until it clears</option>
+                <option value="300">Every 5 minutes until it clears</option>
+              </select>
+            </div>
+            <div>
+              <label for="alVol">Volume <span class="vtag" id="alVolTag">60%</span></label>
+              <input type="range" id="alVol" min="5" max="100" step="5" value="60">
+            </div>
+            <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end">
+              <button class="btn sm" id="alTest2" type="button">Test sound</button>
+              <button class="btn sm" id="alSnooze" type="button">Silence 10 min</button>
+            </div>
+          </div>
+          <div class="note" id="alSoundNote" style="margin-top:12px"></div>
+        </div>
+
+        <div class="card pad" style="margin-bottom:16px">
+          <div class="sect">On the charts</div>
+          <div class="optrow">
+            <div class="opt"><label>Show limits on the Detail charts</label>
               <div class="seg" id="alBands"><button data-v="0">Off</button><button class="on" data-v="1">On</button></div>
-              <div class="note">Shades the area outside your limits on the Detail charts.</div>
+              <div class="note">Draws each limit as a dashed line and shades the area outside it.</div>
             </div>
           </div>
         </div>
@@ -782,6 +879,30 @@ body.locked .shell,body.locked .mnav{display:none!important}
           <table class="stats" id="alBreach"></table>
           <div class="note" style="margin-top:11px">Worked out from the readings currently loaded on the Detail page — change the time range there to look further back.</div>
         </div>
+      </section>
+
+      <!-- ============ REPORT ============ -->
+      <section class="view" id="v-report">
+        <div class="toprow">
+          <div>
+            <div class="h1"><span>Daily report</span><span id="repTitle">—</span></div>
+            <p class="sub">One day on one page: how complete the data is, the range of every measurement, and when a limit was crossed. Limits come from the Alarms page.</p>
+          </div>
+        </div>
+        <div class="toolbar reptools">
+          <div><label for="repDay">Day</label><select id="repDay"></select></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end">
+            <button class="btn sm" id="repReload" type="button">Reload</button>
+            <button class="btn sm" id="repPrint" type="button">Print or save as PDF</button>
+            <button class="btn sm" id="repCsv" type="button">Save summary as CSV</button>
+          </div>
+        </div>
+        <div class="rephead">
+          <h1>Daily report — <span id="repHeadRoom"></span></h1>
+          <p><span id="repHeadDay"></span> · <span id="repHeadMade"></span></p>
+        </div>
+        <div class="note" id="repState" style="margin:0 0 14px">—</div>
+        <div id="repBody"></div>
       </section>
 
       <!-- ============ EXPORT ============ -->
@@ -1206,6 +1327,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
   <button data-go="detail"><svg class="ic sm"><use href="#i-chart"/></svg>Detail</button>
   <button data-go="calc"><svg class="ic sm"><use href="#i-calc"/></svg>Calc</button>
   <button data-go="alarms"><svg class="ic sm"><use href="#i-bell"/></svg>Alarms<span class="mdot" id="mnavAlarm"></span></button>
+  <button data-go="report"><svg class="ic sm"><use href="#i-report"/></svg>Report</button>
   <button data-go="export"><svg class="ic sm"><use href="#i-down"/></svg>Export</button>
   <button data-go="settings"><svg class="ic sm"><use href="#i-gear"/></svg>Settings</button>
 </nav>
@@ -1464,7 +1586,7 @@ var SPANS=[
   {id:'all',label:'All history',    ms:null}
 ];
 var LS='coolroom_v2';
-var PAGES=['overview','detail','calc','alarms','export','settings'];
+var PAGES=['overview','detail','calc','alarms','report','export','settings'];
 
 var S={
   page:'overview',
@@ -2085,6 +2207,8 @@ function go(page,quiet){
   if(page==='detail') setTimeout(function(){ resizeCharts(); },
                                   (typeof motionMs==='function') ? motionMs() : 210);
   if(page==='overview'||page==='detail') refresh();
+  document.body.classList.toggle('on-report',page==='report');   /* print styles apply to this page only */
+  if(page==='report' && typeof repShow==='function' && ROOM) repShow();
 }
 Array.prototype.forEach.call(document.querySelectorAll('[data-go]'),function(b){
   b.onclick=function(){ go(b.dataset.go); };
@@ -2735,6 +2859,8 @@ function posSelectSync(){
   if(sig===POS_SIG) return;
   POS_SIG=sig;
   buildPosSelect();
+  /* the limits editor offers a row per position, so it has to follow them */
+  if(typeof alBuildRules==='function'){ alBuildRules(); }
 }
 function buildPosSelect(){
   var wrap=$('wrapPos'), sel=$('selPos');
@@ -2789,8 +2915,10 @@ async function switchRoom(id){
   drawChPrevSoon();
   setTx('roomTx', ROOM.name);
   save();
+  if(typeof repReset==='function') repReset();
   await loadDays();
   await refresh();
+  if(S.page==='report' && typeof repShow==='function') repShow();
   log('Switched to '+ROOM.name,'s');
 }
 
@@ -2886,6 +3014,7 @@ async function renderDetail(w){
           ch.data.datasets[n+i].data=cmp?cmp.map(function(r){return {x:r.t,y:r[ln.k]};}):[];
         }
       });
+      if(ch.options.plugins.alBands) ch.options.plugins.alBands.bands=alBandsFor(g);
       var lg=$('cmpLg-'+g.id); if(lg) lg.style.display=(cmpRows&&cmpRows.length)?'':'none';
       ch.update('none');
     });
@@ -3344,15 +3473,25 @@ function load(){
       AL[rid]=AL[rid]||{};
       Object.keys(src).forEach(function(k){
         var r=src[k]; if(!r||typeof r!=='object') return;
+        var pv={};
+        if(r.pv && typeof r.pv==='object') Object.keys(r.pv).forEach(function(p){
+          var x=r.pv[p]; if(!x||typeof x!=='object') return;
+          pv[p]={lo:(typeof x.lo==='number'?x.lo:null), hi:(typeof x.hi==='number'?x.hi:null)};
+        });
         AL[rid][k]={on:!!r.on,
                     lo:(typeof r.lo==='number'?r.lo:null),
                     hi:(typeof r.hi==='number'?r.hi:null),
-                    stuck:(typeof r.stuck==='number'?r.stuck:0)};
+                    stuck:(typeof r.stuck==='number'?r.stuck:0),
+                    split:!!r.split, pv:pv};
       });
     });
     if(c.alui){
       if(typeof c.alui.sound==='boolean') AL_UI.sound=c.alui.sound;
       if(typeof c.alui.bands==='boolean') AL_UI.bands=c.alui.bands;
+      if(['beep','double','chime','siren'].indexOf(c.alui.tone)>=0) AL_UI.tone=c.alui.tone;
+      if(typeof c.alui.vol==='number') AL_UI.vol=Math.min(100,Math.max(5,c.alui.vol));
+      if([0,15,30,60,300].indexOf(c.alui.repeat)>=0) AL_UI.repeat=c.alui.repeat;
+      if(c.alui.which==='err'||c.alui.which==='all') AL_UI.which=c.alui.which;
     }
     if(c.pick && typeof c.pick==='object') Object.keys(c.pick).forEach(function(rid){
       if(Array.isArray(c.pick[rid])) COMBO_PICK[rid]=c.pick[rid].slice();
@@ -4129,16 +4268,19 @@ function renderCalc(){
 }
 function bootCalc(){ renderCalc(); }
 
-
 /* ================================================================
-   Alarms — limits per channel, checked in this browser only.
-   Nothing is sent anywhere, and nothing runs while the page is shut.
+   Alarms — limits per channel, and per sampling position where the
+   room has several. Checked in this browser only: nothing is sent
+   anywhere, and nothing runs while the page is shut.
    ================================================================ */
 
-/* AL[roomId][channelKey] = {on:bool, lo:number|null, hi:number|null, stuck:minutes|0} */
-var AL={}, AL_UI={sound:false, bands:true};
-var AL_STATE={};          /* roomId -> key -> last state, so a beep fires once */
-var AL_AC=null;
+/* AL[roomId][channelKey] = {on, lo, hi, stuck, split, pv:{'1':{lo,hi},...}}
+   split=false: lo/hi apply to every reading.
+   split=true : each position has its own lo/hi in pv; lo/hi are unused. */
+var AL={};
+var AL_UI={sound:false, bands:true, tone:'beep', vol:60, repeat:0, which:'all'};
+var AL_STATE={};          /* roomId -> key -> last severity, so a new alarm sounds once */
+var AL_AC=null, AL_LAST=0, AL_SNOOZE=0, AL_NOW={err:0,warn:0};
 
 function alRules(){
   if(!ROOM) return {};
@@ -4147,12 +4289,31 @@ function alRules(){
 }
 function alRule(k){
   var r=alRules();
-  if(!r[k]) r[k]={on:false, lo:null, hi:null, stuck:0};
+  if(!r[k]) r[k]={on:false, lo:null, hi:null, stuck:0, split:false, pv:{}};
+  if(!r[k].pv) r[k].pv={};
   return r[k];
+}
+function alMulti(){ return !!POS && posList().length>1; }
+function alSplit(r){ return !!r && !!r.split && alMulti(); }
+function alPv(r,p){
+  var k=String(p);
+  if(!r.pv[k]) r.pv[k]={lo:null,hi:null};
+  return r.pv[k];
 }
 function alAnyOn(){
   var r=alRules();
   return Object.keys(r).some(function(k){ return r[k].on; });
+}
+function alSide(lim,v){
+  if(v==null||isNaN(v)) return '';
+  if(lim.lo!=null && v<lim.lo) return 'low';
+  if(lim.hi!=null && v>lim.hi) return 'high';
+  return '';
+}
+/* newest loaded reading taken at one position */
+function alLatestAt(p){
+  for(var i=S.rows.length-1;i>=0;i--){ if(S.rows[i][POS.key]===p) return S.rows[i]; }
+  return null;
 }
 
 /* How long a channel has held exactly the same value, in minutes.
@@ -4173,17 +4334,33 @@ function alStuckMinutes(k){
   return (until-from)/60000;
 }
 
-/* '' | 'ok' | 'low' | 'high' | 'stuck' | 'nodata' */
-function alEvaluate(k){
+/* One channel checked. st: '' | 'ok' | 'low' | 'high' | 'stuck' | 'nodata'
+   parts (only when limits are per position): [{p,v,t,st,lim}] */
+function alCheck(k){
   var r=alRule(k);
-  if(!r.on) return '';
+  if(!r.on) return {st:'',v:null,parts:null};
+  if(alSplit(r)){
+    var parts=posList().map(function(p){
+      var row=alLatestAt(p), v=row?row[k]:null, lim=alPv(r,p);
+      var st=(v==null||isNaN(v)) ? 'nodata' : (alSide(lim,v)||'ok');
+      return {p:p, v:v, t:row?row.t:null, st:st, lim:lim};
+    });
+    var worst='ok';
+    parts.forEach(function(x){
+      if(x.st==='low'||x.st==='high'){ if(worst!=='low'&&worst!=='high') worst=x.st; }
+      else if(x.st==='nodata' && worst==='ok') worst='nodata';
+    });
+    if(worst==='ok' && r.stuck>0 && alStuckMinutes(k)>=r.stuck) worst='stuck';
+    return {st:worst, v:S.cur[k], parts:parts};
+  }
   var v=S.cur[k];
-  if(v==null||isNaN(v)) return 'nodata';
-  if(r.lo!=null && v<r.lo) return 'low';
-  if(r.hi!=null && v>r.hi) return 'high';
-  if(r.stuck>0 && alStuckMinutes(k)>=r.stuck) return 'stuck';
-  return 'ok';
+  if(v==null||isNaN(v)) return {st:'nodata',v:v,parts:null};
+  var side=alSide(r,v);
+  if(side) return {st:side,v:v,parts:null};
+  if(r.stuck>0 && alStuckMinutes(k)>=r.stuck) return {st:'stuck',v:v,parts:null};
+  return {st:'ok',v:v,parts:null};
 }
+function alEvaluate(k){ return alCheck(k).st; }
 function alSeverity(st){
   return (st==='low'||st==='high') ? 'err'
        : (st==='stuck'||st==='nodata') ? 'warn'
@@ -4195,44 +4372,102 @@ function alWord(st){
        : st==='ok'?'Normal' : 'Off';
 }
 
-function alBeep(){
-  if(!AL_UI.sound) return;
+/* ---------------- sound ---------------- */
+var AL_TONES=[
+  {id:'beep',   name:'Beep',        note:'one short tone'},
+  {id:'double', name:'Double beep', note:'two quick tones'},
+  {id:'chime',  name:'Chime',       note:'soft, two notes'},
+  {id:'siren',  name:'Siren',       note:'rising and falling, hard to miss'}
+];
+function alAudio(){
   try{
     AL_AC=AL_AC||new (window.AudioContext||window.webkitAudioContext)();
-    var o=AL_AC.createOscillator(), g=AL_AC.createGain();
-    o.type='sine'; o.frequency.value=880;
-    g.gain.setValueAtTime(0.0001,AL_AC.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.16,AL_AC.currentTime+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001,AL_AC.currentTime+0.5);
-    o.connect(g); g.connect(AL_AC.destination);
-    o.start(); o.stop(AL_AC.currentTime+0.52);
+    if(AL_AC.state==='suspended') AL_AC.resume();
+  }catch(e){ AL_AC=null; }
+  return AL_AC;
+}
+function alNote(ac,type,f0,f1,at,dur,peak){
+  var o=ac.createOscillator(), g=ac.createGain(), t=ac.currentTime+at;
+  o.type=type; o.frequency.setValueAtTime(f0,t);
+  if(f1!==f0) o.frequency.linearRampToValueAtTime(f1,t+dur*0.5),
+              o.frequency.linearRampToValueAtTime(f0,t+dur);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(peak,t+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t); o.stop(t+dur+0.03);
+}
+/* force=true is the Test button: it plays even when sound is off or silenced */
+function alBeep(force){
+  if(!force && (!AL_UI.sound || Date.now()<AL_SNOOZE)) return;
+  var ac=alAudio(); if(!ac) return;
+  var peak=Math.max(0.0002, 0.5*Math.pow(Math.min(100,Math.max(0,AL_UI.vol))/100,1.6));
+  try{
+    if(AL_UI.tone==='double'){ alNote(ac,'sine',988,988,0,0.16,peak); alNote(ac,'sine',988,988,0.24,0.16,peak); }
+    else if(AL_UI.tone==='chime'){ alNote(ac,'sine',660,660,0,0.7,peak); alNote(ac,'sine',880,880,0.22,0.9,peak); }
+    else if(AL_UI.tone==='siren'){ alNote(ac,'triangle',620,1040,0,0.6,peak); alNote(ac,'triangle',620,1040,0.6,0.6,peak); }
+    else alNote(ac,'sine',880,880,0,0.5,peak);
   }catch(e){}
+  AL_LAST=Date.now();
+}
+/* how many current problems count for sound, given "which alarms make a sound" */
+function alAudible(){ return AL_NOW.err + (AL_UI.which==='all' ? AL_NOW.warn : 0); }
+function alTick(){
+  var sn=$('alSnooze'), left=AL_SNOOZE-Date.now();
+  if(sn){
+    sn.textContent = left>0 ? 'Silenced '+Math.ceil(left/60000)+' min — undo' : 'Silence 10 min';
+    sn.classList.toggle('on', left>0);
+  }
+  if(AL_UI.sound && AL_UI.repeat>0 && alAudible()>0 && Date.now()-AL_LAST>=AL_UI.repeat*1000) alBeep();
 }
 
+/* ---------------- status ---------------- */
+function alLimText(lim,dec){
+  var a=[];
+  if(lim.lo!=null) a.push('low '+fmt(lim.lo,dec));
+  if(lim.hi!=null) a.push('high '+fmt(lim.hi,dec));
+  return a.join(' · ');
+}
 function alRefresh(){
   if(!ROOM) return;
   var rules=alRules(), prev=AL_STATE[ROOM.id]=AL_STATE[ROOM.id]||{};
-  var cards='', bad=0, warn=0, watched=0, fresh=false;
+  var cards='', bad=0, warn=0, watched=0, freshErr=false, freshWarn=false;
+  function track(key,sev){
+    if(sev==='err'){ bad++; if(prev[key]!=='err') freshErr=true; }
+    else if(sev==='warn'){ warn++; if(prev[key]!=='warn'&&prev[key]!=='err') freshWarn=true; }
+    prev[key]=sev;
+  }
 
   DEFS.forEach(function(d){
-    var st=alEvaluate(d.k);
-    if(!st) return;
+    var c=alCheck(d.k);
+    if(!c.st) return;
     watched++;
-    var sev=alSeverity(st);
-    if(sev==='err') bad++; else if(sev==='warn') warn++;
-    if((sev==='err'||sev==='warn') && prev[d.k]!=='err' && prev[d.k]!=='warn') fresh=true;
-    prev[d.k]=sev;
-    var r=rules[d.k], v=S.cur[d.k];
-    var lim=[];
-    if(r.lo!=null) lim.push('low '+fmt(r.lo,d.dec));
-    if(r.hi!=null) lim.push('high '+fmt(r.hi,d.dec));
-    if(r.stuck>0) lim.push('stuck '+r.stuck+' min');
-    cards+='<div class="alcard '+sev+'"><div class="top"><i></i><b title="'+d.n+'">'+d.n+
-      '</b><span class="st">'+alWord(st)+'</span></div>'+
-      '<div class="big">'+fmt(v,d.dec)+'<u>'+(d.unit||'')+'</u></div>'+
-      '<div class="lim">'+(lim.join(' · ')||'no limits set')+'</div></div>';
+    var r=rules[d.k], sev=alSeverity(c.st), body, lim;
+    if(c.parts){
+      c.parts.forEach(function(x){ track(d.k+'|'+x.p, alSeverity(x.st)); });
+      if(c.st==='stuck') track(d.k, 'warn'); else prev[d.k]='ok';
+      body='<div class="alparts">'+c.parts.map(function(x){
+        var sv=alSeverity(x.st);
+        return '<div class="alpart '+sv+'"><i style="background:'+posColor(x.p)+'"></i>'+
+          '<span class="pn">'+posLabel(x.p)+'</span>'+
+          '<span class="pv">'+fmt(x.v,d.dec)+'</span>'+
+          '<span class="ps">'+(x.st==='ok'?(alLimText(x.lim,d.dec)||'no limit'):alWord(x.st))+'</span></div>';
+      }).join('')+'</div>';
+      lim='limits per '+POS.label.toLowerCase()+(r.stuck>0?' · stuck '+r.stuck+' min':'');
+    }else{
+      track(d.k, sev);
+      body='<div class="big">'+fmt(c.v,d.dec)+'<u>'+(d.unit||'')+'</u></div>';
+      lim=alLimText(r,d.dec);
+      if(r.stuck>0) lim+=(lim?' · ':'')+'stuck '+r.stuck+' min';
+      if(alMulti() && lim) lim+=' · every '+POS.label.toLowerCase();
+    }
+    cards+='<div class="alcard '+sev+(c.parts?' wide':'')+'"><div class="top"><i></i><b title="'+d.n+'">'+d.n+
+      (c.parts&&d.unit?' <small>'+d.unit+'</small>':'')+
+      '</b><span class="st">'+alWord(c.st)+'</span></div>'+body+
+      '<div class="lim">'+(lim||'no limits set')+'</div></div>';
   });
 
+  AL_NOW={err:bad,warn:warn};
   var host=$('alStatus');
   if(host) host.innerHTML = cards ||
     '<div class="note">No channel is being watched yet. Tick one in <b>Limits</b> below.</div>';
@@ -4245,7 +4480,7 @@ function alRefresh(){
   if(note) note.textContent = !watched
     ? 'Nothing is being checked, so nothing can be missed — or caught.'
     : bad||warn
-      ? 'Checked against the latest reading, '+(S.cur.t?ago(S.cur.t):'age unknown')+'.'
+      ? 'Checked against the latest reading'+(alMulti()?' from each '+POS.label.toLowerCase():'')+', '+(S.cur.t?ago(S.cur.t):'age unknown')+'.'
       : 'All '+watched+' watched channel'+(watched===1?'':'s')+' within limits, as of '+
         (S.cur.t?fmtT(S.cur.t):'—')+'.';
 
@@ -4253,45 +4488,56 @@ function alRefresh(){
   ['railAlarm','mnavAlarm'].forEach(function(id){
     var e=$(id); if(e) e.className=(id==='railAlarm'?'raildot ':'mdot ')+dot;
   });
-  if(fresh) alBeep();
+  if(freshErr || (freshWarn && AL_UI.which==='all')) alBeep();
   alBreachTable();
 }
 
-/* Every stretch in the loaded rows where a watched channel was outside its limits */
-function alBreachTable(){
-  var tb=$('alBreach'); if(!tb) return;
+/* Every stretch where a watched channel was outside its limits. rows are
+   one position's readings when the limits are per position, so a breach
+   at one valve is not "ended" by the next valve's normal reading. */
+function alBreachRuns(d,rows,lim,p,out){
+  if(lim.lo==null && lim.hi==null) return;
+  var open=null;
+  rows.forEach(function(row){
+    var v=row[d.k], side=alSide(lim,v);
+    if(side){
+      if(!open) open={k:d.k,n:d.n,unit:d.unit,dec:d.dec,p:p,from:row.t,to:row.t,worst:v,side:side,count:1};
+      else{
+        open.to=row.t; open.count++;
+        if(open.side==='low'){ if(v<open.worst) open.worst=v; }
+        else if(v>open.worst) open.worst=v;
+      }
+    }else if(open && v!=null){ out.push(open); open=null; }
+  });
+  if(open) out.push(open);
+}
+function alBreaches(rows){
   var rules=alRules(), out=[];
   DEFS.forEach(function(d){
     var r=rules[d.k];
-    if(!r||!r.on||(r.lo==null&&r.hi==null)) return;
-    var open=null;
-    S.rows.forEach(function(row){
-      var v=row[d.k];
-      var bad = v!=null && !isNaN(v) && ((r.lo!=null&&v<r.lo)||(r.hi!=null&&v>r.hi));
-      if(bad){
-        if(!open) open={k:d.k,n:d.n,unit:d.unit,dec:d.dec,from:row.t,to:row.t,
-                        worst:v,side:(r.lo!=null&&v<r.lo)?'low':'high'};
-        else{
-          open.to=row.t;
-          if(open.side==='low'){ if(v<open.worst) open.worst=v; }
-          else if(v>open.worst) open.worst=v;
-        }
-      }else if(open){ out.push(open); open=null; }
+    if(!r||!r.on) return;
+    if(alSplit(r)) posList().forEach(function(p){
+      alBreachRuns(d, rowsForPos(rows,p), alPv(r,p), p, out);
     });
-    if(open) out.push(open);
+    else alBreachRuns(d, rows, r, null, out);
   });
   out.sort(function(a,b){ return b.from-a.from; });
+  return out;
+}
+function alBreachTable(){
+  var tb=$('alBreach'); if(!tb) return;
+  var out=alBreaches(S.rows);
+  var hd='<tr><th>Channel</th><th>When</th><th>For</th><th>Worst</th></tr>';
   if(!out.length){
-    tb.innerHTML='<tr><th>Channel</th><th>When</th><th>For</th><th>Worst</th></tr>'+
-      '<tr><td colspan="4" style="color:var(--tx3)">'+
+    tb.innerHTML=hd+'<tr><td colspan="4" style="color:var(--tx3)">'+
       (alAnyOn()?'No breaches in the period shown on Detail.':'No limits set yet.')+'</td></tr>';
     return;
   }
-  var h='<tr><th>Channel</th><th>When</th><th>For</th><th>Worst</th></tr>';
+  var h=hd;
   out.slice(0,60).forEach(function(b){
     var mins=Math.max(1,Math.round((b.to-b.from)/60000));
-    h+='<tr><td>'+b.n+'</td><td>'+fmtDT(b.from)+'</td>'+
-       '<td>'+(mins<60?mins+' min':(mins/60).toFixed(1)+' h')+'</td>'+
+    h+='<tr><td>'+b.n+(b.p!=null?' · '+posLabel(b.p):'')+'</td><td>'+fmtDT(b.from)+'</td>'+
+       '<td>'+(b.count===1?'1 reading':(mins<60?mins+' min':(mins/60).toFixed(1)+' h'))+'</td>'+
        '<td style="color:var(--err)">'+(b.side==='low'?'↓ ':'↑ ')+
        fmt(b.worst,b.dec)+' '+(b.unit||'')+'</td></tr>';
   });
@@ -4299,53 +4545,107 @@ function alBreachTable(){
   tb.innerHTML=h;
 }
 
+/* ---------------- limits editor ---------------- */
+function alNum(e){ var v=parseFloat(e.value); return (e.value===''||isNaN(v))?null:v; }
+function alFixOrder(lim,loEl,hiEl,name){
+  if(lim.lo!=null&&lim.hi!=null&&lim.lo>lim.hi){     /* swap rather than silently misbehave */
+    var tmp=lim.lo; lim.lo=lim.hi; lim.hi=tmp;
+    if(loEl) loEl.value=lim.lo; if(hiEl) hiEl.value=lim.hi;
+    log('Low was above high on '+name+' — swapped','w');
+  }
+}
 function alBuildRules(){
   var host=$('alRules'); if(!host||!ROOM) return;
   var t=$('alTitle'); if(t) t.textContent='for '+ROOM.short;
+  var multi=alMulti(), ps=multi?posList():[];
+  var help=$('alPvHelp');
+  if(help) help.style.display=multi?'':'none';
+  if(help && multi) help.innerHTML='This room is sampled at <b>'+ps.length+' '+POS.label.toLowerCase()+'s</b>. '+
+    'Press <b>Per '+POS.label.toLowerCase()+'</b> on a channel to give each one its own low and high limit; '+
+    'leave it off to use one limit for every reading.';
   host.innerHTML='';
   DEFS.forEach(function(d){
-    var r=alRule(d.k);
-    var row=el('div','alrow'+(r.on?' on':''));
+    var r=alRule(d.k), split=alSplit(r);
+    var row=el('div','alrow'+(r.on?' on':'')+(split?' split':''));
     row.innerHTML=
       '<input type="checkbox" class="ck" id="al-on-'+d.k+'"'+(r.on?' checked':'')+
         ' aria-label="Watch '+d.n+'">'+
       '<div class="nm"><b>'+d.n+'</b><small>'+(d.unit||'no unit')+(d.diag?' · diagnostic':'')+'</small></div>'+
+      (multi?'<button type="button" class="pvbtn'+(split?' on':'')+'" id="al-pv-'+d.k+'" aria-pressed="'+(split?'true':'false')+
+        '" title="Give each '+POS.label.toLowerCase()+' its own limits">Per '+POS.label.toLowerCase()+'</button>':'')+
       '<span class="lab">Low</span>'+
-      '<input type="number" step="any" id="al-lo-'+d.k+'" value="'+(r.lo==null?'':r.lo)+'" placeholder="—">'+
+      '<input type="number" step="any" id="al-lo-'+d.k+'" value="'+(split||r.lo==null?'':r.lo)+'" placeholder="'+(split?'below':'—')+'"'+(split?' disabled':'')+'>'+
       '<span class="lab">High</span>'+
-      '<input type="number" step="any" id="al-hi-'+d.k+'" value="'+(r.hi==null?'':r.hi)+'" placeholder="—">'+
+      '<input type="number" step="any" id="al-hi-'+d.k+'" value="'+(split||r.hi==null?'':r.hi)+'" placeholder="'+(split?'below':'—')+'"'+(split?' disabled':'')+'>'+
       '<span class="lab">Stuck</span>'+
       '<input type="number" step="1" min="0" id="al-st-'+d.k+'" value="'+(r.stuck||'')+'" placeholder="min">';
     host.appendChild(row);
+    if(split){
+      var sub=el('div','alsub');
+      sub.innerHTML=ps.map(function(p){
+        var lim=alPv(r,p);
+        return '<div class="alsubrow"><i style="background:'+posColor(p)+'"></i>'+
+          '<span class="pn">'+posLabel(p)+'</span>'+
+          '<span class="lab">Low</span>'+
+          '<input type="number" step="any" id="al-lo-'+d.k+'-'+p+'" value="'+(lim.lo==null?'':lim.lo)+'" placeholder="—" aria-label="'+d.n+' low, '+posLabel(p)+'">'+
+          '<span class="lab">High</span>'+
+          '<input type="number" step="any" id="al-hi-'+d.k+'-'+p+'" value="'+(lim.hi==null?'':lim.hi)+'" placeholder="—" aria-label="'+d.n+' high, '+posLabel(p)+'">'+
+          '</div>';
+      }).join('');
+      host.appendChild(sub);
+    }
   });
   DEFS.forEach(function(d){
-    var on=$('al-on-'+d.k), lo=$('al-lo-'+d.k), hi=$('al-hi-'+d.k), st=$('al-st-'+d.k);
-    var num=function(e){ var v=parseFloat(e.value); return (e.value===''||isNaN(v))?null:v; };
+    var on=$('al-on-'+d.k), lo=$('al-lo-'+d.k), hi=$('al-hi-'+d.k), st=$('al-st-'+d.k), pv=$('al-pv-'+d.k);
+    function turnOn(){
+      var r=alRule(d.k);
+      if(!r.on){ r.on=true; if(on){ on.checked=true; on.closest('.alrow').classList.add('on'); } }
+    }
     if(on) on.onchange=function(){
       alRule(d.k).on=this.checked;
       this.closest('.alrow').classList.toggle('on',this.checked);
       save(); alRefresh(); rebuildSoon();
     };
+    if(pv) pv.onclick=function(){
+      var r=alRule(d.k);
+      r.split=!r.split;
+      if(r.split){
+        /* start every position from the shared limit, so nothing goes unwatched */
+        posList().forEach(function(p){
+          var lim=alPv(r,p);
+          if(lim.lo==null && lim.hi==null){ lim.lo=r.lo; lim.hi=r.hi; }
+        });
+      }
+      save(); alBuildRules(); alRefresh(); rebuildSoon();
+      log(d.n+': limits '+(r.split?'per '+POS.label.toLowerCase():'shared by every '+POS.label.toLowerCase()),'s');
+    };
     [lo,hi].forEach(function(e,i){
       if(!e) return;
       e.onchange=function(){
         var r=alRule(d.k);
-        if(i===0) r.lo=num(e); else r.hi=num(e);
-        if(r.lo!=null&&r.hi!=null&&r.lo>r.hi){     /* swap rather than silently misbehave */
-          var tmp=r.lo; r.lo=r.hi; r.hi=tmp;
-          if(lo) lo.value=r.lo; if(hi) hi.value=r.hi;
-          log('Low was above high on '+d.n+' — swapped','w');
-        }
-        if((r.lo!=null||r.hi!=null)&&!r.on){ r.on=true; if(on) on.checked=true;
-          e.closest('.alrow').classList.add('on'); }
+        if(i===0) r.lo=alNum(e); else r.hi=alNum(e);
+        alFixOrder(r,lo,hi,d.n);
+        if(r.lo!=null||r.hi!=null) turnOn();
         save(); alRefresh(); rebuildSoon();
       };
+    });
+    if(alSplit(alRule(d.k))) posList().forEach(function(p){
+      var plo=$('al-lo-'+d.k+'-'+p), phi=$('al-hi-'+d.k+'-'+p);
+      [plo,phi].forEach(function(e,i){
+        if(!e) return;
+        e.onchange=function(){
+          var lim=alPv(alRule(d.k),p);
+          if(i===0) lim.lo=alNum(e); else lim.hi=alNum(e);
+          alFixOrder(lim,plo,phi,d.n+' '+posLabel(p));
+          if(lim.lo!=null||lim.hi!=null) turnOn();
+          save(); alRefresh(); rebuildSoon();
+        };
+      });
     });
     if(st) st.onchange=function(){
       var v=parseInt(this.value,10);
       alRule(d.k).stuck=(isNaN(v)||v<=0)?0:v;
-      if(alRule(d.k).stuck&&!alRule(d.k).on){ alRule(d.k).on=true; if(on) on.checked=true;
-        this.closest('.alrow').classList.add('on'); }
+      if(alRule(d.k).stuck) turnOn();
       save(); alRefresh();
     };
   });
@@ -4353,17 +4653,24 @@ function alBuildRules(){
 
 /* Limits from what the sensor has actually been doing: the window seen on
    Detail, padded by a quarter of its own spread. A starting point, not advice. */
+function alSuggestOne(d,rows,lim){
+  var s=statsFor(rows)[d.k]; if(!s) return false;
+  var spread=s.max-s.min;
+  var pad=spread>0?spread*0.25:Math.max(Math.abs(s.avg)*0.1,Math.pow(10,-d.dec));
+  lim.lo=+(s.min-pad).toFixed(d.dec);
+  lim.hi=+(s.max+pad).toFixed(d.dec);
+  return true;
+}
 function alSuggest(){
   if(!S.rows.length){ log('No readings loaded to suggest from','w'); return; }
-  var st=statsFor(S.rows), n=0;
+  var n=0;
   DEFS.forEach(function(d){
-    var s=st[d.k]; if(!s) return;
-    var spread=s.max-s.min;
-    var pad=spread>0?spread*0.25:Math.max(Math.abs(s.avg)*0.1,Math.pow(10,-d.dec));
-    var r=alRule(d.k);
-    r.lo=+(s.min-pad).toFixed(d.dec);
-    r.hi=+(s.max+pad).toFixed(d.dec);
-    r.on=true; n++;
+    var r=alRule(d.k), did=false;
+    if(alSplit(r)) posList().forEach(function(p){
+      if(alSuggestOne(d,rowsForPos(S.rows,p),alPv(r,p))) did=true;
+    });
+    else did=alSuggestOne(d,S.rows,r);
+    if(did){ r.on=true; n++; }
   });
   alBuildRules(); save(); alRefresh(); rebuildSoon();
   log('Suggested limits for '+n+' channels from the period on Detail','s');
@@ -4375,13 +4682,26 @@ function alClear(){
   log('All limits cleared for '+ROOM.short,'s');
 }
 
-/* Shaded bands outside the limits, drawn behind one chart */
+/* Limit lines for one chart. With limits per position: the chosen
+   position's limits are shaded; with every position on the chart, each
+   one's limits are drawn as lines in its dot colour and nothing is shaded,
+   because no single area is "out of limits" for all of them. */
 function alBandsFor(g){
   if(!AL_UI.bands) return [];
   var out=[];
   g.series.forEach(function(sr){
     var r=alRules()[sr.k];
     if(!r||!r.on) return;
+    if(alSplit(r)){
+      var act=posActive();
+      (act!=null?[act]:posList()).forEach(function(p){
+        var lim=alPv(r,p), solo=(act!=null);
+        var extra=solo?{}:{noShade:true,color:posColor(p),tag:' ('+posLabel(p)+')'};
+        if(lim.lo!=null) out.push(Object.assign({to:lim.lo, side:'lo'},extra));
+        if(lim.hi!=null) out.push(Object.assign({from:lim.hi, side:'hi'},extra));
+      });
+      return;
+    }
     if(r.lo!=null) out.push({to:r.lo, side:'lo'});
     if(r.hi!=null) out.push({from:r.hi, side:'hi'});
   });
@@ -4399,45 +4719,306 @@ var alBandPlugin={
        band fills the whole plot the shading alone tells you nothing */
     x.fillStyle=hexA(TH.err,0.07);
     bands.forEach(function(b){
+      if(b.noShade) return;
       var top,bot;
       if(b.side==='hi'){ top=a.top; bot=Math.min(a.bottom,y.getPixelForValue(b.from)); }
       else{ top=Math.max(a.top,y.getPixelForValue(b.to)); bot=a.bottom; }
       if(bot>top) x.fillRect(a.left,top,a.right-a.left,bot-top);
     });
-    x.strokeStyle=hexA(TH.err,0.55);
     x.lineWidth=1; x.setLineDash([5,4]);
     x.font='600 '+Math.round(10*CH.fsk)+'px '+
       (getComputedStyle(document.body).fontFamily||'sans-serif');
-    x.fillStyle=hexA(TH.err,0.85);
     x.textBaseline='bottom';
+    var used=[];
     bands.forEach(function(b){
       var v=(b.side==='hi')?b.from:b.to;
       var py=y.getPixelForValue(v);
       if(py<a.top-1||py>a.bottom+1) return;
+      var col=b.color||TH.err;
+      x.strokeStyle=hexA(col,b.color?0.8:0.55);
+      x.fillStyle=hexA(col,b.color?1:0.85);
       x.beginPath(); x.moveTo(a.left,py); x.lineTo(a.right,py); x.stroke();
-      var lbl=(b.side==='hi'?'high ':'low ')+v;
-      x.fillText(lbl, a.left+6, b.side==='hi'?py-3:Math.min(a.bottom-2,py+13));
+      var lbl=(b.side==='hi'?'high ':'low ')+v+(b.tag||'');
+      /* labels of limits that sit close together step sideways, not on top of each other */
+      var ty=b.side==='hi'?py-3:Math.min(a.bottom-2,py+13), tx=a.left+6;
+      used.forEach(function(u){ if(Math.abs(u.y-ty)<12 && Math.abs(u.x-tx)<4) tx=u.x+u.w+14; });
+      x.fillText(lbl, tx, ty);
+      used.push({x:tx,y:ty,w:x.measureText(lbl).width});
     });
     x.setLineDash([]);
     x.restore();
   }
 };
+function alSoundSync(){
+  segOn('alSound',AL_UI.sound?'1':'0');
+  segOn('alWhich',AL_UI.which);
+  segOn('alBands',AL_UI.bands?'1':'0');
+  var t=$('alTone'), v=$('alVol'), r=$('alRepeat'), vt=$('alVolTag');
+  if(t) t.value=AL_UI.tone;
+  if(v) v.value=AL_UI.vol;
+  if(vt) vt.textContent=AL_UI.vol+'%';
+  if(r) r.value=String(AL_UI.repeat);
+  var box=$('alSoundOpts');
+  if(box) box.classList.toggle('dimmed',!AL_UI.sound);
+  var n=$('alSoundNote');
+  if(n) n.textContent = !AL_UI.sound
+    ? 'Sound is off. Alarms still show on this page and as a red dot on the menu.'
+    : (AL_UI.which==='err'?'Sounds when a reading goes outside a limit':'Sounds on any new alarm or warning')+
+      (AL_UI.repeat>0?', then every '+(AL_UI.repeat<60?AL_UI.repeat+' seconds':(AL_UI.repeat/60)+' minute'+(AL_UI.repeat===60?'':'s'))+' until it clears.'
+                     :', once.')+
+      ' The browser only allows sound after you have clicked somewhere on the page.';
+}
 function wireAlarms(){
-  var t=$('alTest');
-  if(t) t.onclick=function(){
-    var was=AL_UI.sound; AL_UI.sound=true; alBeep(); AL_UI.sound=was;
-  };
+  var t=$('alTest'); if(t) t.onclick=function(){ alBeep(true); };
+  var t2=$('alTest2'); if(t2) t2.onclick=function(){ alBeep(true); };
   var s=$('alSuggest'); if(s) s.onclick=alSuggest;
   var c=$('alClear'); if(c) c.onclick=alClear;
-  segPick('alSound',function(v){ AL_UI.sound=(v==='1'); segOn('alSound',v); save(); });
-  segPick('alBands',function(v){ AL_UI.bands=(v==='1'); segOn('alBands',v); save(); rebuildSoon(); });
+  segPick('alSound',function(v){
+    AL_UI.sound=(v==='1'); if(AL_UI.sound){ alAudio(); AL_LAST=Date.now(); }
+    alSoundSync(); save(); });
+  segPick('alWhich',function(v){ AL_UI.which=(v==='err'?'err':'all'); alSoundSync(); save(); });
+  segPick('alBands',function(v){ AL_UI.bands=(v==='1'); alSoundSync(); save(); rebuildSoon(); });
+  var tone=$('alTone');
+  if(tone){
+    tone.innerHTML=AL_TONES.map(function(x){ return '<option value="'+x.id+'">'+x.name+' — '+x.note+'</option>'; }).join('');
+    tone.onchange=function(){ AL_UI.tone=this.value; save(); alBeep(true); };
+  }
+  var vol=$('alVol');
+  if(vol){
+    vol.oninput=function(){ AL_UI.vol=parseInt(this.value,10)||0; var vt=$('alVolTag'); if(vt) vt.textContent=AL_UI.vol+'%'; };
+    vol.onchange=function(){ save(); alBeep(true); };
+  }
+  var rep=$('alRepeat');
+  if(rep) rep.onchange=function(){ AL_UI.repeat=parseInt(this.value,10)||0; alSoundSync(); save(); };
+  var sn=$('alSnooze');
+  if(sn) sn.onclick=function(){
+    AL_SNOOZE = (AL_SNOOZE>Date.now()) ? 0 : Date.now()+600000;
+    alTick();
+    log(AL_SNOOZE?'Alarm sound silenced for 10 minutes':'Alarm sound back on','s');
+  };
+  /* browsers keep audio locked until the first click on the page */
+  document.addEventListener('pointerdown',function(){ if(AL_UI.sound) alAudio(); },{passive:true});
+  setInterval(alTick,1000);
 }
 function bootAlarms(){
-  segOn('alSound',AL_UI.sound?'1':'0');
-  segOn('alBands',AL_UI.bands?'1':'0');
+  alSoundSync();
   alBuildRules();
   alRefresh();
 }
+/* ================================================================
+   Report — one day, summarised on one page that prints cleanly.
+   Reads the whole day from the server itself, so it does not depend
+   on what the Detail page happens to have loaded.
+   ================================================================ */
+var REP={day:null, rows:[], total:0, busy:false, err:'', sig:''};
+
+function repDayBounds(day){
+  var a=day.split('-');
+  var from=new Date(+a[0],+a[1]-1,+a[2],0,0,0,0).getTime();
+  return {from:from, to:from+86400000-1};
+}
+function repMedian(v){
+  if(!v.length) return 0;
+  var s=v.slice().sort(function(a,b){return a-b;}), m=s.length>>1;
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2;
+}
+function repDur(ms){
+  if(ms<120000) return Math.round(ms/1000)+' s';
+  var m=Math.round(ms/60000);
+  if(m<60) return m+' min';
+  return Math.floor(m/60)+' h '+pad(m%60)+' min';
+}
+/* how complete the day is: expected readings from the usual interval,
+   and every silence longer than three of those intervals */
+function repCoverage(rows,day){
+  var b=repDayBounds(day), end=Math.min(b.to, Date.now());
+  var out={n:rows.length, step:0, expected:0, pct:null, gaps:[], first:null, last:null, isToday:end<b.to};
+  if(!rows.length) return out;
+  out.first=rows[0].t; out.last=rows[rows.length-1].t;
+  var d=[];
+  for(var i=1;i<rows.length;i++) d.push(rows[i].t-rows[i-1].t);
+  out.step=repMedian(d);
+  if(out.step>0){
+    out.expected=Math.max(rows.length, Math.round((end-b.from)/out.step));
+    out.pct=Math.min(100, 100*rows.length/out.expected);
+    var lim=out.step*3;
+    if(rows[0].t-b.from>lim) out.gaps.push({from:b.from,to:rows[0].t});
+    for(var j=1;j<rows.length;j++)
+      if(rows[j].t-rows[j-1].t>lim) out.gaps.push({from:rows[j-1].t,to:rows[j].t});
+    if(end-out.last>lim) out.gaps.push({from:out.last,to:end});
+  }
+  return out;
+}
+function repChannels(){
+  return DEFS.filter(function(d){ return S.diag || !d.diag; });
+}
+/* one row per channel, or per channel and position where there are several */
+function repStatRows(rows){
+  var ps=(POS && posList().length>1) ? posList() : [null];
+  var breaches=(typeof alBreaches==='function') ? alBreaches(rows) : [];
+  var out=[];
+  repChannels().forEach(function(d){
+    ps.forEach(function(p){
+      var src=rowsForPos(rows,p), s=statsFor(src)[d.k];
+      var rule=(typeof alRules==='function') ? alRules()[d.k] : null;
+      var watched=!!(rule && rule.on), nb=null;
+      if(watched){
+        var lim=(typeof alSplit==='function' && alSplit(rule)) ? alPv(rule,p) : rule;
+        if(lim.lo!=null || lim.hi!=null){
+          nb=0;
+          src.forEach(function(r){ if(alSide(lim,r[d.k])) nb++; });
+        }
+      }
+      out.push({d:d,p:p,s:s,nb:nb});
+    });
+  });
+  return {rows:out, breaches:breaches, split:ps[0]!==null};
+}
+
+async function repLoad(force){
+  if(!ROOM || REP.busy) return;
+  var sel=$('repDay');
+  var day=(sel && sel.value) || REP.day || fmtDate(new Date());
+  var sig=ROOM.id+'|'+day;
+  if(!force && sig===REP.sig && Date.now()-(REP.at||0)<60000){ repRender(); return; }
+  REP.busy=true; REP.err='';
+  var st=$('repState'); if(st) st.textContent='Loading '+day+'…';
+  try{
+    var b=repDayBounds(day);
+    var d=await getJSON('/api/readings?from='+b.from+'&to='+b.to+'&max=20000');
+    REP.rows=d.readings||[]; REP.total=d.total_in_range||REP.rows.length;
+    REP.day=day; REP.sig=sig; REP.at=Date.now();
+  }catch(e){
+    REP.err=e.message; REP.rows=[]; REP.total=0; REP.day=day; REP.sig='';
+  }finally{ REP.busy=false; }
+  repRender();
+}
+function repBuildDays(){
+  var sel=$('repDay'); if(!sel) return;
+  var keep=sel.value||REP.day, today=fmtDate(new Date());
+  var days=(S.days||[]).slice().reverse();
+  if(days.indexOf(today)<0) days.unshift(today);
+  sel.innerHTML=days.map(function(d){
+    return '<option value="'+d+'">'+d+(d===today?' (today)':'')+'</option>';
+  }).join('');
+  sel.value=(keep && days.indexOf(keep)>=0) ? keep : days[0];
+}
+
+function repRender(){
+  var host=$('repBody'); if(!host||!ROOM) return;
+  var day=REP.day||fmtDate(new Date());
+  setTx('repTitle', ROOM.short);
+  setTx('repHeadRoom', ROOM.name);
+  setTx('repHeadDay', day);
+  setTx('repHeadMade', 'Printed '+fmtDT(Date.now(),false));
+  var st=$('repState');
+  if(REP.err){
+    if(st) st.textContent='Could not load this day: '+REP.err;
+    host.innerHTML=''; return;
+  }
+  var rows=REP.rows, cov=repCoverage(rows,day);
+  if(st) st.textContent = rows.length
+    ? REP.total+' reading'+(REP.total===1?'':'s')+' on '+day+
+      (REP.rows.length<REP.total?' ('+REP.rows.length+' used — the day is too long to load in full)':'')+'.'
+    : 'No readings were recorded on '+day+'.';
+  if(!rows.length){ host.innerHTML=''; return; }
+
+  var sr=repStatRows(rows);
+  var longest=cov.gaps.reduce(function(m,g){ return Math.max(m,g.to-g.from); },0);
+  var tiles=[
+    ['Readings', String(REP.total), cov.expected?'of about '+cov.expected+' expected':''],
+    ['Complete', cov.pct==null?'—':cov.pct.toFixed(cov.pct>=99.95?0:1)+'%', cov.isToday?'so far today':'of the whole day'],
+    ['Usual interval', cov.step?repDur(cov.step):'—', 'between readings'],
+    ['Gaps', String(cov.gaps.length), cov.gaps.length?'longest '+repDur(longest):'none longer than '+(cov.step?repDur(cov.step*3):'—')],
+    ['Outside limits', (typeof alAnyOn==='function'&&alAnyOn())?String(sr.breaches.length):'—',
+       (typeof alAnyOn==='function'&&alAnyOn())?'time'+(sr.breaches.length===1?'':'s')+' a limit was crossed':'no limits set on Alarms']
+  ];
+  var h='<div class="reptiles">'+tiles.map(function(t){
+    return '<div class="reptile"><span>'+t[0]+'</span><b>'+t[1]+'</b><small>'+t[2]+'</small></div>';
+  }).join('')+'</div>';
+
+  h+='<div class="card pad repcard"><div class="sect">Summary for the day</div>'+
+     '<table class="stats"><tr><th>Measurement</th>'+(sr.split?'<th>'+POS.label+'</th>':'')+
+     '<th>Readings</th><th>Min</th><th>Average</th><th>Max</th><th>Std dev</th><th>Outside limits</th></tr>';
+  sr.rows.forEach(function(x,i){
+    var d=x.d, s=x.s, firstOfChan=!sr.split || x.p===posList()[0];
+    h+='<tr'+(sr.split&&firstOfChan&&i?' class="grp"':'')+'><td>'+(firstOfChan?d.n+(d.unit?' <span class="u">'+d.unit+'</span>':''):'')+'</td>'+
+       (sr.split?'<td><i class="pdot" style="background:'+posColor(x.p)+'"></i>'+x.p+'</td>':'');
+    if(!s){ h+='<td>0</td><td colspan="5" style="color:var(--tx3)">no data</td></tr>'; return; }
+    h+='<td>'+s.n+'</td><td>'+fmt(s.min,d.dec)+'</td><td>'+fmt(s.avg,d.dec)+'</td><td>'+fmt(s.max,d.dec)+'</td>'+
+       '<td>'+fmt(s.sd,d.dec)+'</td>'+
+       '<td'+(x.nb?' style="color:var(--err);font-weight:700"':'')+'>'+(x.nb==null?'—':x.nb+' reading'+(x.nb===1?'':'s'))+'</td></tr>';
+  });
+  h+='</table></div>';
+
+  h+='<div class="card pad repcard"><div class="sect">Outside limits</div>';
+  if(!(typeof alAnyOn==='function'&&alAnyOn()))
+    h+='<div class="note">No limits are set, so nothing was checked. Set them on the Alarms page and they are applied here to the whole day.</div>';
+  else if(!sr.breaches.length)
+    h+='<div class="note">Every watched measurement stayed inside its limits all day.</div>';
+  else{
+    h+='<table class="stats"><tr><th>Measurement</th><th>From</th><th>To</th><th>Lasted</th><th>Worst</th></tr>';
+    sr.breaches.slice().reverse().slice(0,80).forEach(function(b){
+      h+='<tr><td>'+b.n+(b.p!=null?' · '+posLabel(b.p):'')+'</td><td>'+fmtT(b.from)+'</td><td>'+fmtT(b.to)+'</td>'+
+         '<td>'+(b.count===1?'1 reading':repDur(b.to-b.from))+'</td>'+
+         '<td style="color:var(--err)">'+(b.side==='low'?'↓ ':'↑ ')+fmt(b.worst,b.dec)+' '+(b.unit||'')+'</td></tr>';
+    });
+    if(sr.breaches.length>80) h+='<tr><td colspan="5" style="color:var(--tx3)">'+(sr.breaches.length-80)+' more not shown.</td></tr>';
+    h+='</table>';
+  }
+  h+='</div>';
+
+  h+='<div class="card pad repcard"><div class="sect">Missing data</div>';
+  if(!cov.gaps.length)
+    h+='<div class="note">No gaps: readings arrived about every '+repDur(cov.step)+' from '+fmtT(cov.first)+' to '+fmtT(cov.last)+'.</div>';
+  else{
+    h+='<table class="stats"><tr><th>From</th><th>To</th><th>Lasted</th><th>Readings missed (about)</th></tr>';
+    cov.gaps.slice(0,60).forEach(function(g){
+      h+='<tr><td>'+fmtT(g.from)+'</td><td>'+fmtT(g.to)+'</td><td>'+repDur(g.to-g.from)+'</td>'+
+         '<td>'+Math.max(1,Math.round((g.to-g.from)/cov.step)-1)+'</td></tr>';
+    });
+    if(cov.gaps.length>60) h+='<tr><td colspan="4" style="color:var(--tx3)">'+(cov.gaps.length-60)+' more not shown.</td></tr>';
+    h+='</table><div class="note" style="margin-top:10px">A gap is any silence longer than three times the usual interval ('+repDur(cov.step*3)+').</div>';
+  }
+  h+='</div>';
+  host.innerHTML=h;
+}
+
+function repCSV(){
+  if(!REP.rows.length){ log('Nothing to save for this day','w'); return; }
+  var sr=repStatRows(REP.rows), cov=repCoverage(REP.rows,REP.day);
+  var q=function(v){ v=String(v==null?'':v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  var L=[];
+  L.push(['Room',ROOM.name].map(q).join(','));
+  L.push(['Day',REP.day].map(q).join(','));
+  L.push(['Readings',REP.total].join(','));
+  L.push(['Complete (%)',cov.pct==null?'':cov.pct.toFixed(1)].join(','));
+  L.push(['Gaps',cov.gaps.length].join(','));
+  L.push('');
+  L.push(['Measurement','Unit'].concat(sr.split?[POS.label]:[]).concat(['Readings','Min','Average','Max','Std dev','Readings outside limits']).map(q).join(','));
+  sr.rows.forEach(function(x){
+    var d=x.d, s=x.s;
+    L.push([d.n,d.unit||''].concat(sr.split?[x.p]:[]).concat(s
+      ? [s.n,s.min.toFixed(d.dec),s.avg.toFixed(d.dec),s.max.toFixed(d.dec),s.sd.toFixed(d.dec),x.nb==null?'':x.nb]
+      : [0,'','','','','']).map(q).join(','));
+  });
+  if(cov.gaps.length){
+    L.push(''); L.push('Gap from,Gap to,Minutes');
+    cov.gaps.forEach(function(g){ L.push([fmtDT(g.from),fmtDT(g.to),((g.to-g.from)/60000).toFixed(1)].map(q).join(',')); });
+  }
+  saveBlob(new Blob(['﻿'+L.join('\r\n')],{type:'text/csv;charset=utf-8'}),
+    ROOM.short.replace(/[^A-Za-z0-9]+/g,'_')+'_report_'+REP.day+'.csv');
+  log('Saved the report summary for '+REP.day,'g');
+}
+function wireReport(){
+  var sel=$('repDay'); if(sel) sel.onchange=function(){ repLoad(true); };
+  var p=$('repPrint'); if(p) p.onclick=function(){ window.print(); };
+  var c=$('repCsv'); if(c) c.onclick=repCSV;
+  var r=$('repReload'); if(r) r.onclick=function(){ repLoad(true); };
+}
+/* called when the page is opened, and when the room changes underneath it */
+function repShow(){ repBuildDays(); repLoad(false); }
+function repReset(){ REP.sig=''; REP.rows=[]; REP.day=null; var s=$('repDay'); if(s) s.innerHTML=''; var b=$('repBody'); if(b) b.innerHTML=''; }
 /* ================= boot ================= */
 loadSwatches();
 buildThemeGrid(); buildColourRows(); wireColourButtons(); wireSets(); renderSets();
@@ -4445,6 +5026,7 @@ applyTheme(false);
 load();
 bootUI();
 wireAlarms();
+wireReport();
 exEveryHint();
 setTab(S.stab||'connection');
 $('selSpan').value=S.span; $('selFrom').value=S.from; $('selTo').value=S.to;
@@ -4478,6 +5060,7 @@ async function startApp(){
   schedule();
   await loadDays();
   await refresh();
+  if(S.page==='report') repShow();
   setTimeout(resizeCharts,80);
   setTimeout(drawChPrev,220);
 }
