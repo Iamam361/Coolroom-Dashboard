@@ -86,6 +86,12 @@ svg{display:block}
   .view.on.enter{animation:none}
 }
 
+.poslegend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:-6px 2px 14px;font-size:calc(.8rem*var(--fsk));color:var(--tx2)}
+.poslegend .pl-t{color:var(--tx3)}
+.poslegend .pl-i{display:inline-flex;align-items:center;gap:6px}
+.poslegend .pl-i i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.poslegend .pl-i.dim{opacity:.35}
+
 /* ================= chips ================= */
 .chips{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px}
 .chip{display:inline-flex;align-items:center;gap:9px;padding:9px 18px 9px 9px;border-radius:999px;
@@ -641,6 +647,14 @@ body.locked .shell,body.locked .mnav{display:none!important}
           <div id="wrapFrom" style="display:none"><label>From</label><select id="selFrom"></select></div>
           <div id="wrapTo" style="display:none"><label>To</label><select id="selTo"></select></div>
           <div id="wrapPos" style="display:none"><label id="posLbl">Position</label><select id="selPos"></select></div>
+          <div id="wrapDots" style="display:none;min-width:0">
+            <label>Dots</label>
+            <div class="seg" id="dotsSeg">
+              <button data-d="auto" title="Show dots when there are few enough to tell apart">Auto</button>
+              <button data-d="on" title="Always show a dot for every reading">On</button>
+              <button data-d="off" title="Line only">Off</button>
+            </div>
+          </div>
           <div style="min-width:0">
             <label>Compare with</label>
             <div class="seg" id="cmpSeg">
@@ -650,6 +664,7 @@ body.locked .shell,body.locked .mnav{display:none!important}
             </div>
           </div>
         </div>
+        <div class="poslegend" id="posLegend" style="display:none"></div>
 
         <div class="note" id="dtNote" style="margin:0 0 14px">—</div>
         <div class="charts" id="charts"></div>
@@ -1454,7 +1469,7 @@ var PAGES=['overview','detail','calc','alarms','export','settings'];
 var S={
   page:'overview',
   rows:[], ovRows:[], total:0, cur:{}, days:[],
-  meas:'all', cmp:'none', room:null, diag:false, pos:'all',
+  meas:'all', cmp:'none', room:null, diag:false, pos:'all', dots:'auto',
   span:'1h', date:'live', from:0, to:24,
   charts:{}, ovChart:null, timer:null, busy:false,
   zoomed:false, zsync:false,
@@ -2145,7 +2160,10 @@ function chartOpts(g){
       tooltip:{backgroundColor:TH.panel2,borderColor:TH.line,borderWidth:1,
         titleColor:TH.tx2,bodyColor:TH.tx,padding:10,titleFont:axisFont(),bodyFont:axisFont(),
         callbacks:{
-          title:function(i){return i.length?fmtDT(i[0].parsed.x):'';},
+          title:function(i){
+            if(!i.length) return '';
+            var r=i[0].raw, t=fmtDT(i[0].parsed.x);
+            return (POS && r && r.p!=null) ? t+'  \u00b7  '+posLabel(r.p) : t;},
           label:function(c){return c.dataset.label+': '+fmt(c.parsed.y,g.dec)+' '+g.unit;}}}
     },
     scales:{
@@ -2186,8 +2204,10 @@ function comboOpts(){
 }
 function ds(label,color,dashed,extra){
   var fill=chFill()&&!dashed;
-  var d={label:label,data:[],borderColor:color,
-    backgroundColor:fill?hexA(color,CH.op/100):hexA(color,Math.min(0.85,CH.op/100+0.5)),
+  var d={label:label,data:[],_c:color,_fillOn:fill,
+    borderColor:lineColor, backgroundColor:fillColor,
+    pointBackgroundColor:dotColor, pointBorderColor:dotRing, pointBorderWidth:dotRingW,
+    pointHoverBackgroundColor:dotColor,
     borderWidth:dashed?Math.max(1.2,CH.w-0.4):CH.w,
     borderDash:dashed?[5,4]:[],
     pointRadius:ptRadius, pointHoverRadius:Math.max(3,CH.pts+2),
@@ -2273,7 +2293,7 @@ function buildCharts(){
       '<span id="cmpLg-'+g.id+'" style="display:none"><i class="dash"></i>earlier</span>';
     card.innerHTML=cardShell(g,tall,legend);
     host.appendChild(card);
-    var sets=lines.map(function(ln,i){ return ds(ln.label,serColor(i)); });
+    var sets=lines.map(function(ln,i){ return ds(ln.label,serColor(i),false,{_single:lines.length===1}); });
     lines.forEach(function(ln,i){ sets.push(ds(ln.label+' earlier',serColor(i),true)); });
     var opts=chartOpts(g);
     opts.plugins.alBands={bands:alBandsFor(g)};
@@ -2298,24 +2318,77 @@ function plotLines(g){
   });
 }
 
-/* A single position is sampled once per cycle, so its line carries about
-   a third of the points. Show the samples themselves when they are few
-   enough to see, so a smoothed curve is never mistaken for dense data.
+/* ---- sample dots ----
+   One sensor reads three valves in turn, so on a room with positions each
+   dot is painted in the colour of the valve that was open for it. The line
+   stays one line in time order; the dots say where each reading came from.
 
-   This is a scriptable option rather than a value written on the dataset:
-   Chart.js caches resolved element styles, and update('none') does not
-   re-resolve a plain value, so a value set per refresh never reached the
-   canvas. A function is evaluated at draw time, so it always does. */
-function markerRadius(nPoints){
-  if(!POS || posActive()==null) return CH.pts;
-  if(CH.type==='scatter') return Math.max(2,CH.pts||2.2);
-  if(nPoints > 150) return CH.pts;
-  return Math.max(CH.pts, nPoints > 60 ? 1.8 : 2.8);
+   S.dots: 'auto' shows dots while they are few enough to tell apart,
+           'on' always, 'off' never.
+
+   All of these are scriptable options, not values written on the dataset:
+   Chart.js caches resolved plain values, and update('none') does not
+   re-resolve them. A function is evaluated at draw time. */
+function posColor(p){
+  var ps=posList(), i=ps.indexOf(p);
+  if(i<0) i=0;
+  return TH[SER_PAL[i%SER_PAL.length]];
 }
+function dotsWanted(nPoints){
+  if(!POS) return false;
+  if(S.dots==='off') return false;
+  if(S.dots==='on') return true;
+  return nPoints<=150;
+}
+function markerRadius(nPoints){
+  if(CH.type==='scatter') return Math.max(2,CH.pts||2.2);
+  if(!POS) return CH.pts;
+  if(!dotsWanted(nPoints)) return S.dots==='off' ? 0 : CH.pts;
+  return Math.max(CH.pts, nPoints>400 ? 1.7 : nPoints>150 ? 2.4 : 3.4);
+}
+function isEarlier(d){ return !!d && / earlier$/.test(d.label||''); }
+function dsLen(d){ return d && d.data ? d.data.length : 0; }
 function ptRadius(ctx){
   var d=ctx.dataset;
-  if(d && /earlier/.test(d.label||'')) return 0;
-  return markerRadius(d && d.data ? d.data.length : 0);
+  if(isEarlier(d)) return 0;
+  return markerRadius(dsLen(d));
+}
+function dotColor(ctx){
+  var d=ctx.dataset, r=ctx.raw;
+  if(POS && !isEarlier(d) && r && r.p!=null) return posColor(r.p);
+  return d._c;
+}
+function dotRing(ctx){
+  var d=ctx.dataset;
+  return (POS && !isEarlier(d) && dotsWanted(dsLen(d))) ? TH.panel : d._c;
+}
+function dotRingW(ctx){
+  var d=ctx.dataset;
+  return (POS && !isEarlier(d) && dotsWanted(dsLen(d)) && dsLen(d)<=150) ? 1.2 : 0;
+}
+/* with every valve on one line and the dots carrying the colour, the line
+   itself goes neutral: a coloured line through three sources would claim
+   an identity it does not have */
+function neutralLine(d){
+  return !!POS && !!d._single && !isEarlier(d) && posActive()==null && dotsWanted(dsLen(d));
+}
+function lineColor(ctx){
+  var d=ctx.dataset;
+  return neutralLine(d) ? TH.tx3 : d._c;
+}
+function fillColor(ctx){
+  var d=ctx.dataset, c=neutralLine(d) ? TH.tx3 : d._c;
+  return d._fillOn ? hexA(c,CH.op/100) : hexA(c,Math.min(0.85,CH.op/100+0.5));
+}
+function renderPosLegend(){
+  var h=$('posLegend'); if(!h) return;
+  var ps=POS?posList():[];
+  if(!POS || ps.length<2 || S.dots==='off'){ h.style.display='none'; h.innerHTML=''; return; }
+  var act=posActive();
+  h.style.display='';
+  h.innerHTML='<span class="pl-t">Dot colour</span>'+ps.map(function(p){
+    return '<span class="pl-i'+(act!=null&&act!==p?' dim':'')+'"><i style="background:'+posColor(p)+'"></i>'+posLabel(p)+'</span>';
+  }).join('');
 }
 function resizeCharts(){
   Object.keys(S.charts).forEach(function(k){ try{S.charts[k].resize();}catch(e){} });
@@ -2667,12 +2740,15 @@ function buildPosSelect(){
   var wrap=$('wrapPos'), sel=$('selPos');
   if(!sel) return;
   var ps=POS?posList():[];
+  var dw=$('wrapDots');
   if(!POS||ps.length<2){
     if(wrap) wrap.style.display='none';
+    if(dw) dw.style.display='none';
     S.pos='all';
     return;
   }
   if(wrap) wrap.style.display='';
+  if(dw) dw.style.display='';
   var lbl=$('posLbl'); if(lbl) lbl.textContent=POS.label;
   var want=String(S.pos);
   if(want!=='all' && ps.indexOf(parseFloat(want))<0){ want='all'; S.pos='all'; }
@@ -2685,6 +2761,16 @@ function buildPosSelect(){
     S.pos=this.value; S.zoomed=false;
     buildCharts(); save(); refresh();
   };
+}
+
+function dotsSegSync(){
+  var seg=$('dotsSeg'); if(!seg) return;
+  Array.prototype.forEach.call(seg.children,function(b){
+    b.classList.toggle('on', b.dataset.d===S.dots);
+    if(!b._w){ b._w=1; b.onclick=function(){
+      S.dots=b.dataset.d; save(); buildCharts(); refresh();
+    }; }
+  });
 }
 
 async function switchRoom(id){
@@ -2783,7 +2869,7 @@ async function renderDetail(w){
       if(!S.zoomed){ cc.options.scales.x.min=w.from; cc.options.scales.x.max=w.to; }
       var src=rowsForPos(S.rows,posActive());
       COMBO.forEach(function(c,i){
-        cc.data.datasets[i].data=src.map(function(r){return {x:r.t,y:r[c.k]};});
+        cc.data.datasets[i].data=src.map(function(r){return {x:r.t,y:r[c.k],p:POS?r[POS.key]:null};});
       });
       cc.update('none');
     }
@@ -2794,7 +2880,7 @@ async function renderDetail(w){
       var lines=plotLines(g), n=lines.length;
       lines.forEach(function(ln,i){
         var src=rowsForPos(S.rows,ln.p);
-        ch.data.datasets[i].data=src.map(function(r){return {x:r.t,y:r[ln.k]};});
+        ch.data.datasets[i].data=src.map(function(r){return {x:r.t,y:r[ln.k],p:POS?r[POS.key]:null};});
         if(ch.data.datasets[n+i]){
           var cmp=cmpRows?rowsForPos(cmpRows,ln.p):null;
           ch.data.datasets[n+i].data=cmp?cmp.map(function(r){return {x:r.t,y:r[ln.k]};}):[];
@@ -2806,6 +2892,8 @@ async function renderDetail(w){
   }
   renderStats();
   posSelectSync();
+  renderPosLegend();
+  dotsSegSync();
   if(typeof renderCalc==='function') renderCalc();
   if(typeof alRefresh==='function') alRefresh();
 
@@ -3230,7 +3318,7 @@ function save(){
     api:$('api').value, poll:$('poll').value, maxpts:$('maxpts').value,
     stale:$('staleAfter').value, stab:S.stab, meas:S.meas, cmp:S.cmp,
     span:S.span, date:S.date, from:S.from, to:S.to,
-    ch:CH, ty:TY, cs:CS, room:S.room, diag:S.diag, pos:S.pos, pick:COMBO_PICK, calc:CALC,
+    ch:CH, ty:TY, cs:CS, room:S.room, diag:S.diag, pos:S.pos, dots:S.dots, pick:COMBO_PICK, calc:CALC,
     al:AL, alui:AL_UI,
     exEvery:exEveryStep(), exHow:exEveryHow()})); }catch(e){}
 }
@@ -3271,6 +3359,7 @@ function load(){
     });
     if(c.room) S.room=c.room;
     if(c.pos!=null) S.pos=String(c.pos);
+    if(c.dots==='auto'||c.dots==='on'||c.dots==='off') S.dots=c.dots;
     if(c.calc) Object.keys(CALC).forEach(function(k){ if(c.calc[k]!=null) CALC[k]=c.calc[k]; });
     if(typeof c.diag==='boolean') S.diag=c.diag;
     if(c.exEvery!=null && $('exEvery')) $('exEvery').value=String(c.exEvery);
