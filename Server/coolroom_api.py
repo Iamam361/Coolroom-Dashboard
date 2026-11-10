@@ -315,8 +315,35 @@ def days_between(room, from_ms, to_ms):
 def thin(rows, n):
     if n <= 0 or len(rows) <= n:
         return rows
+    if n == 1:
+        return rows[:1]
     step = (len(rows) - 1) / (n - 1)
     return [rows[round(i * step)] for i in range(n)]
+
+
+def thin_by_position(rows, n, pos_key):
+    """Thin without destroying the valve mix.
+
+    The valves take turns, so the rows arrive as 1,2,3,1,2,3,... A plain
+    uniform stride lands on the same valve over and over: at a stride of 3
+    it keeps one valve and throws the other two away completely. So each
+    valve is thinned on its own and the results merged back in time order.
+    """
+    if n <= 0 or len(rows) <= n or not pos_key:
+        return thin(rows, n)
+
+    groups = {}
+    for r in rows:
+        groups.setdefault(r.get(pos_key), []).append(r)
+    if len(groups) < 2:
+        return thin(rows, n)
+
+    share = max(1, n // len(groups))
+    out = []
+    for g in groups.values():
+        out.extend(thin(g, share))
+    out.sort(key=lambda r: r["t"])
+    return out
 
 
 def readings(room, from_ms, to_ms, max_points):
@@ -326,7 +353,8 @@ def readings(room, from_ms, to_ms, max_points):
             if from_ms <= r["t"] <= to_ms:
                 out.append(r)
     out.sort(key=lambda r: r["t"])
-    return thin(out, max_points), len(out)
+    pos = (room.get("position") or {}).get("key")
+    return thin_by_position(out, max_points, pos), len(out)
 
 
 def latest(room):

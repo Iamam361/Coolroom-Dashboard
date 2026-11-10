@@ -12,7 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
-:root{
+:root{--tdur:.28s;--trise:10px;
   --bg:#f3f1ec; --panel:#ffffff; --panel2:#faf9f6; --rail:#ffffff;
   --line:#ebe8e1; --line2:#ddd9d0;
   --tx:#16161a; --tx2:#6f6c66; --tx3:#a3a09a;
@@ -80,8 +80,8 @@ svg{display:block}
 /* a short fade and rise on page change. Only opacity and transform are
    animated, which the compositor can do without re-laying out the page,
    so the charts inside are never re-measured mid-flight. */
-.view.on.enter{animation:viewIn .18s cubic-bezier(.22,.61,.36,1) both}
-@keyframes viewIn{ from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.view.on.enter{animation:viewIn var(--tdur,.28s) cubic-bezier(.22,.61,.36,1) both}
+@keyframes viewIn{ from{opacity:0;transform:translateY(var(--trise,10px))} to{opacity:1;transform:none} }
 @media(prefers-reduced-motion:reduce){
   .view.on.enter{animation:none}
 }
@@ -970,6 +970,11 @@ body.locked .shell,body.locked .mnav{display:none!important}
                   </div>
                 </div>
                 <div style="margin-top:14px"><button class="btn sm" id="typeReset" type="button">Reset text settings</button></div>
+              </div>
+              <div class="card pad">
+                <div class="sect">Page transitions</div>
+                <div class="fonts" id="motionGrid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"></div>
+                <div class="note" style="margin-top:11px" id="motionNote"></div>
               </div>
               <div class="card pad">
                 <div class="sect">Preview</div>
@@ -2050,7 +2055,7 @@ function go(page,quiet){
   /* skip the animation when nothing actually changed, when the room is
      reloading (an animation over a wait reads as lag), and when the
      system asks for reduced motion */
-  if(!same && !quiet && !REDUCED){
+  if(!same && !quiet && !REDUCED && !(typeof TY==='object' && TY.motion==='off')){
     var v=$('v-'+page);
     v.classList.remove('enter');
     void v.offsetWidth;            /* restart the animation */
@@ -2062,7 +2067,8 @@ function go(page,quiet){
   if(location.hash.slice(1)!==page) location.hash=page;
   window.scrollTo(0,0);
   var sp=$('sidePanel'); if(sp) sp.classList.toggle('hide', page!=='overview');
-  if(page==='detail') setTimeout(function(){ resizeCharts(); }, REDUCED?30:210);
+  if(page==='detail') setTimeout(function(){ resizeCharts(); },
+                                  (typeof motionMs==='function') ? motionMs() : 210);
   if(page==='overview'||page==='detail') refresh();
 }
 Array.prototype.forEach.call(document.querySelectorAll('[data-go]'),function(b){
@@ -2184,7 +2190,7 @@ function ds(label,color,dashed,extra){
     backgroundColor:fill?hexA(color,CH.op/100):hexA(color,Math.min(0.85,CH.op/100+0.5)),
     borderWidth:dashed?Math.max(1.2,CH.w-0.4):CH.w,
     borderDash:dashed?[5,4]:[],
-    pointRadius:CH.pts, pointHoverRadius:Math.max(3,CH.pts+2),
+    pointRadius:ptRadius, pointHoverRadius:Math.max(3,CH.pts+2),
     tension:chTension(), fill:fill, spanGaps:true,
     stepped:CH.type==='step'?'before':false,
     showLine:CH.type!=='scatter'};
@@ -2277,26 +2283,39 @@ function buildCharts(){
   });
 }
 
-/* The lines on one chart: every series, multiplied by sampling position
-   when the room has several and no single one is chosen. Consecutive
-   readings come from different points, so a line that mixes them is a
-   line through three different places. */
+/* The lines on one chart: one line per series, always.
+
+   One sensor sits behind three valves and reads whichever one is open,
+   so the readings arrive 1,2,3,1,2,3,... "All positions" draws them in
+   the order they were taken, steps and all, which is the real history of
+   the instrument. Choosing a single position filters to that valve's own
+   readings, which is the real history of that sampling point. Neither
+   case splits one series into several lines. */
 function plotLines(g){
-  var ps = POS ? posList() : [];
   var act = posActive();
-  var split = !!POS && ps.length>1 && act==null;
-  var out=[];
-  g.series.forEach(function(sr){
-    if(split){
-      ps.forEach(function(p){
-        out.push({k:sr.k, p:p,
-          label:(g.series.length>1 ? sr.label+' \u00b7 ' : '')+posLabel(p)});
-      });
-    }else{
-      out.push({k:sr.k, p:act, label:sr.label});
-    }
+  return g.series.map(function(sr){
+    return {k:sr.k, p:act, label:sr.label};
   });
-  return out;
+}
+
+/* A single position is sampled once per cycle, so its line carries about
+   a third of the points. Show the samples themselves when they are few
+   enough to see, so a smoothed curve is never mistaken for dense data.
+
+   This is a scriptable option rather than a value written on the dataset:
+   Chart.js caches resolved element styles, and update('none') does not
+   re-resolve a plain value, so a value set per refresh never reached the
+   canvas. A function is evaluated at draw time, so it always does. */
+function markerRadius(nPoints){
+  if(!POS || posActive()==null) return CH.pts;
+  if(CH.type==='scatter') return Math.max(2,CH.pts||2.2);
+  if(nPoints > 150) return CH.pts;
+  return Math.max(CH.pts, nPoints > 60 ? 1.8 : 2.8);
+}
+function ptRadius(ctx){
+  var d=ctx.dataset;
+  if(d && /earlier/.test(d.label||'')) return 0;
+  return markerRadius(d && d.data ? d.data.length : 0);
 }
 function resizeCharts(){
   Object.keys(S.charts).forEach(function(k){ try{S.charts[k].resize();}catch(e){} });
@@ -2791,6 +2810,9 @@ async function renderDetail(w){
   if(typeof alRefresh==='function') alRefresh();
 
   var note='Showing '+w.desc+'. ';
+  if(POS && posActive()!=null){
+    note='Showing '+posLabel(posActive())+' only, '+w.desc+'. ';
+  }
   if(!S.rows.length) note+='No readings recorded in this period.';
   else{
     note+=S.total+' reading'+(S.total===1?'':'s');
@@ -2803,6 +2825,11 @@ async function renderDetail(w){
     note += (cmpRows && cmpRows.length)
       ? ' Dashed lines are '+(S.cmp==='1'?'the previous day':'the same period last week')+'.'
       : ' No data for '+(S.cmp==='1'?'the previous day':'that period last week')+', so no overlay is drawn.';
+  }
+  if(POS && posActive()!=null){
+    var nPos=posList().length||1;
+    note += ' The valve visits each point in turn, so this line carries about one reading per cycle'+
+            (nPos>1 ? ' \u2014 roughly a '+(nPos===3?'third':'1/'+nPos)+' of all readings' : '')+'.';
   }
   $('dtNote').textContent=note;
   $('pointsPill').textContent=S.rows.length+' points';
@@ -3363,7 +3390,7 @@ function seriesOf(k){
 
 /* ---- defaults ---- */
 var CH_DEF={type:'line',fill:true,op:13,smooth:true,w:2,pts:0,grid:'both',zero:false,h:'m',legend:true,fsk:1,wheel:'ctrl'};
-var TY_DEF={font:'jakarta',fsk:100,numk:100};
+var TY_DEF={font:'jakarta',fsk:100,numk:100,motion:'normal'};
 var CH={}, TY={};
 Object.keys(CH_DEF).forEach(function(k){ CH[k]=CH_DEF[k]; });
 Object.keys(TY_DEF).forEach(function(k){ TY[k]=TY_DEF[k]; });
@@ -3407,6 +3434,37 @@ function loadFont(f){
   document.head.appendChild(l);
 }
 
+/* ---- page transition speed ---- */
+var MOTION=[
+  {id:'off',    name:'Off',    dur:0,    rise:0,  note:'No animation'},
+  {id:'fast',   name:'Fast',   dur:.16,  rise:7,  note:'Barely there'},
+  {id:'normal', name:'Normal', dur:.28,  rise:10, note:'Default'},
+  {id:'slow',   name:'Slow',   dur:.45,  rise:14, note:'Easy to follow'}
+];
+function motionDef(id){
+  for(var i=0;i<MOTION.length;i++) if(MOTION[i].id===id) return MOTION[i];
+  return MOTION[2];
+}
+/* milliseconds to wait before re-measuring the charts: the animation plus
+   a small margin, so Chart.js never resizes mid-flight */
+function motionMs(){
+  if(REDUCED || TY.motion==='off') return 30;
+  return Math.round(motionDef(TY.motion).dur*1000)+30;
+}
+function applyMotion(){
+  var m=motionDef(TY.motion), r=document.documentElement.style;
+  r.setProperty('--tdur', m.dur+'s');
+  r.setProperty('--trise', m.rise+'px');
+  var g=$('motionGrid');
+  if(g) Array.prototype.forEach.call(g.children,function(x){
+    x.classList.toggle('on', x.dataset.motion===TY.motion); });
+  var n=$('motionNote');
+  if(n) n.textContent = REDUCED
+    ? 'Your system asks for reduced motion, so page transitions stay off whatever is chosen here.'
+    : (TY.motion==='off' ? 'Pages change instantly.'
+       : 'Pages fade and rise over '+m.dur.toFixed(2).replace(/0$/,'')+' seconds.');
+}
+
 /* ---- apply ---- */
 function applyType(){
   var f=fontDef(TY.font);
@@ -3422,6 +3480,7 @@ function applyType(){
   var fg=$('fontGrid');
   if(fg) Array.prototype.forEach.call(fg.children,function(x){
     x.classList.toggle('on',x.dataset.font===TY.font); });
+  applyMotion();
 }
 function applyChartCfg(redraw){
   var t=$('chWTag'); if(t) t.textContent=CH.w.toFixed(1);
@@ -3624,6 +3683,23 @@ function buildFontGrid(){
   });
   FONTS.forEach(function(f){ if(f.id===TY.font) loadFont(f); });
 }
+function buildMotionGrid(){
+  var g=$('motionGrid'); if(!g) return;
+  g.innerHTML='';
+  MOTION.forEach(function(m){
+    var b=el('button','fontb'); b.type='button'; b.dataset.motion=m.id;
+    b.innerHTML='<div class="sample" style="font-size:1.05rem">'+m.name+'</div>'+
+                '<div class="fname">'+(m.dur?m.dur.toFixed(2).replace(/0$/,'')+' s \u00b7 ':'')+m.note+'</div>';
+    b.onclick=function(){
+      TY.motion=m.id; applyMotion(); save();
+      /* replay it on the page they are looking at, so the choice is visible */
+      var v=$('v-'+S.page);
+      if(v && !REDUCED && m.dur){ v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); }
+      log('Page transitions set to '+m.name,'s');
+    };
+    g.appendChild(b);
+  });
+}
 function wireTypography(){
   var fsk=$('fsk'), numk=$('numk');
   if(fsk){
@@ -3702,6 +3778,7 @@ function wireSeries(){
 }
 function bootUI(){
   buildFontGrid();
+  buildMotionGrid();
   wireTypography();
   wireChartCfg();
   wireSeries();
